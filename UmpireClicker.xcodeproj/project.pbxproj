@@ -1,0 +1,674 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BB000000000000000000F001 /* UmpireClickerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F001 /* UmpireClickerApp.swift */; };
+		BB000000000000000000F002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F002 /* ContentView.swift */; };
+		BB000000000000000000F003 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F003 /* HistoryStore.swift */; };
+		BB000000000000000000F004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F004 /* SettingsView.swift */; };
+		BB000000000000000000F005 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F005 /* HistoryView.swift */; };
+		BB000000000000000000F006 /* GameDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F006 /* GameDetailView.swift */; };
+		BB000000000000000000F007 /* PhoneSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F007 /* PhoneSessionManager.swift */; };
+		BB000000000000000000F011 /* UmpireClickerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F011 /* UmpireClickerApp.swift */; };
+		BB000000000000000000F012 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F012 /* ContentView.swift */; };
+		BB000000000000000000F013 /* IndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F013 /* IndicatorView.swift */; };
+		BB000000000000000000F014 /* TimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F014 /* TimerView.swift */; };
+		BB000000000000000000F015 /* LineScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F015 /* LineScoreView.swift */; };
+		BB000000000000000000F016 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F016 /* SetupView.swift */; };
+		BB000000000000000000F017 /* RunsEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F017 /* RunsEntryView.swift */; };
+		BB000000000000000000F018 /* GameOverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F018 /* GameOverView.swift */; };
+		BB000000000000000000F019 /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F019 /* WatchSessionManager.swift */; };
+		BB000000000000000000F021 /* Sport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F021 /* Sport.swift */; };
+		BB000000000000000000F022 /* GameSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F022 /* GameSettings.swift */; };
+		BB000000000000000000F023 /* InningRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F023 /* InningRuns.swift */; };
+		BB000000000000000000F024 /* GameRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F024 /* GameRecord.swift */; };
+		BB000000000000000000F025 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F025 /* GameState.swift */; };
+		BB000000000000000000F026 /* GameTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F026 /* GameTimer.swift */; };
+		BB000000000000000000F027 /* SyncMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F027 /* SyncMessages.swift */; };
+		BB000000000000000000F031 /* Sport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F021 /* Sport.swift */; };
+		BB000000000000000000F032 /* GameSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F022 /* GameSettings.swift */; };
+		BB000000000000000000F033 /* InningRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F023 /* InningRuns.swift */; };
+		BB000000000000000000F034 /* GameRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F024 /* GameRecord.swift */; };
+		BB000000000000000000F035 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F025 /* GameState.swift */; };
+		BB000000000000000000F036 /* GameTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F026 /* GameTimer.swift */; };
+		BB000000000000000000F037 /* SyncMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F027 /* SyncMessages.swift */; };
+		BB000000000000000000F108 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F008 /* Assets.xcassets */; };
+		BB000000000000000000F11A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F01A /* Assets.xcassets */; };
+		BB000000000000000000F1A2 /* UmpireClicker Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F0A2 /* UmpireClicker Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1D0000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1B0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD0000000000000000000002;
+			remoteInfo = "UmpireClicker Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		EE0000000000000000000004 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				BB000000000000000000F1A2 /* UmpireClicker Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AA000000000000000000F001 /* UmpireClickerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmpireClickerApp.swift; sourceTree = "<group>"; };
+		AA000000000000000000F002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F003 /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
+		AA000000000000000000F004 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F005 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F006 /* GameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDetailView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F007 /* PhoneSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSessionManager.swift; sourceTree = "<group>"; };
+		AA000000000000000000F008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA000000000000000000F009 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
+		AA000000000000000000F011 /* UmpireClickerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmpireClickerApp.swift; sourceTree = "<group>"; };
+		AA000000000000000000F012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F013 /* IndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndicatorView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F014 /* TimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F015 /* LineScoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineScoreView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F016 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F017 /* RunsEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunsEntryView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F018 /* GameOverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameOverView.swift; sourceTree = "<group>"; };
+		AA000000000000000000F019 /* WatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionManager.swift; sourceTree = "<group>"; };
+		AA000000000000000000F01A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA000000000000000000F01B /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
+		AA000000000000000000F021 /* Sport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sport.swift; sourceTree = "<group>"; };
+		AA000000000000000000F022 /* GameSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSettings.swift; sourceTree = "<group>"; };
+		AA000000000000000000F023 /* InningRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InningRuns.swift; sourceTree = "<group>"; };
+		AA000000000000000000F024 /* GameRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameRecord.swift; sourceTree = "<group>"; };
+		AA000000000000000000F025 /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
+		AA000000000000000000F026 /* GameTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameTimer.swift; sourceTree = "<group>"; };
+		AA000000000000000000F027 /* SyncMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMessages.swift; sourceTree = "<group>"; };
+		AA000000000000000000F0A1 /* UmpireClicker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UmpireClicker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000000000000000000F0A2 /* UmpireClicker Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "UmpireClicker Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EE0000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE0000000000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CC0000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				CC0000000000000000000002 /* UmpireClicker */,
+				CC0000000000000000000005 /* UmpireClicker Watch App */,
+				CC0000000000000000000008 /* Shared */,
+				CC000000000000000000000B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000002 /* UmpireClicker */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F001 /* UmpireClickerApp.swift */,
+				AA000000000000000000F002 /* ContentView.swift */,
+				AA000000000000000000F003 /* HistoryStore.swift */,
+				CC0000000000000000000003 /* Views */,
+				CC0000000000000000000004 /* Connectivity */,
+				AA000000000000000000F008 /* Assets.xcassets */,
+				AA000000000000000000F009 /* Preview Content */,
+			);
+			path = UmpireClicker;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000003 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F004 /* SettingsView.swift */,
+				AA000000000000000000F005 /* HistoryView.swift */,
+				AA000000000000000000F006 /* GameDetailView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000004 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F007 /* PhoneSessionManager.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000005 /* UmpireClicker Watch App */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F011 /* UmpireClickerApp.swift */,
+				AA000000000000000000F012 /* ContentView.swift */,
+				CC0000000000000000000006 /* Views */,
+				CC0000000000000000000007 /* Connectivity */,
+				AA000000000000000000F01A /* Assets.xcassets */,
+				AA000000000000000000F01B /* Preview Content */,
+			);
+			path = "UmpireClicker Watch App";
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F013 /* IndicatorView.swift */,
+				AA000000000000000000F014 /* TimerView.swift */,
+				AA000000000000000000F015 /* LineScoreView.swift */,
+				AA000000000000000000F016 /* SetupView.swift */,
+				AA000000000000000000F017 /* RunsEntryView.swift */,
+				AA000000000000000000F018 /* GameOverView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000007 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F019 /* WatchSessionManager.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000008 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				CC0000000000000000000009 /* Models */,
+				CC000000000000000000000A /* Connectivity */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000009 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F021 /* Sport.swift */,
+				AA000000000000000000F022 /* GameSettings.swift */,
+				AA000000000000000000F023 /* InningRuns.swift */,
+				AA000000000000000000F024 /* GameRecord.swift */,
+				AA000000000000000000F025 /* GameState.swift */,
+				AA000000000000000000F026 /* GameTimer.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CC000000000000000000000A /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F027 /* SyncMessages.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		CC000000000000000000000B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000F0A1 /* UmpireClicker.app */,
+				AA000000000000000000F0A2 /* UmpireClicker Watch App.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DD0000000000000000000001 /* UmpireClicker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A0000000000000000000002 /* Build configuration list for PBXNativeTarget "UmpireClicker" */;
+			buildPhases = (
+				EE0000000000000000000001 /* Sources */,
+				EE0000000000000000000002 /* Frameworks */,
+				EE0000000000000000000003 /* Resources */,
+				EE0000000000000000000004 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1C0000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = UmpireClicker;
+			productName = UmpireClicker;
+			productReference = AA000000000000000000F0A1 /* UmpireClicker.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DD0000000000000000000002 /* UmpireClicker Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A0000000000000000000003 /* Build configuration list for PBXNativeTarget "UmpireClicker Watch App" */;
+			buildPhases = (
+				EE0000000000000000000005 /* Sources */,
+				EE0000000000000000000006 /* Frameworks */,
+				EE0000000000000000000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "UmpireClicker Watch App";
+			productName = "UmpireClicker Watch App";
+			productReference = AA000000000000000000F0A2 /* UmpireClicker Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1B0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					DD0000000000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					DD0000000000000000000002 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 1A0000000000000000000001 /* Build configuration list for PBXProject "UmpireClicker" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CC0000000000000000000001;
+			productRefGroup = CC000000000000000000000B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DD0000000000000000000001 /* UmpireClicker */,
+				DD0000000000000000000002 /* UmpireClicker Watch App */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		EE0000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB000000000000000000F108 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE0000000000000000000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB000000000000000000F11A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		EE0000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB000000000000000000F001 /* UmpireClickerApp.swift in Sources */,
+				BB000000000000000000F002 /* ContentView.swift in Sources */,
+				BB000000000000000000F003 /* HistoryStore.swift in Sources */,
+				BB000000000000000000F004 /* SettingsView.swift in Sources */,
+				BB000000000000000000F005 /* HistoryView.swift in Sources */,
+				BB000000000000000000F006 /* GameDetailView.swift in Sources */,
+				BB000000000000000000F007 /* PhoneSessionManager.swift in Sources */,
+				BB000000000000000000F021 /* Sport.swift in Sources */,
+				BB000000000000000000F022 /* GameSettings.swift in Sources */,
+				BB000000000000000000F023 /* InningRuns.swift in Sources */,
+				BB000000000000000000F024 /* GameRecord.swift in Sources */,
+				BB000000000000000000F025 /* GameState.swift in Sources */,
+				BB000000000000000000F026 /* GameTimer.swift in Sources */,
+				BB000000000000000000F027 /* SyncMessages.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE0000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB000000000000000000F011 /* UmpireClickerApp.swift in Sources */,
+				BB000000000000000000F012 /* ContentView.swift in Sources */,
+				BB000000000000000000F013 /* IndicatorView.swift in Sources */,
+				BB000000000000000000F014 /* TimerView.swift in Sources */,
+				BB000000000000000000F015 /* LineScoreView.swift in Sources */,
+				BB000000000000000000F016 /* SetupView.swift in Sources */,
+				BB000000000000000000F017 /* RunsEntryView.swift in Sources */,
+				BB000000000000000000F018 /* GameOverView.swift in Sources */,
+				BB000000000000000000F019 /* WatchSessionManager.swift in Sources */,
+				BB000000000000000000F031 /* Sport.swift in Sources */,
+				BB000000000000000000F032 /* GameSettings.swift in Sources */,
+				BB000000000000000000F033 /* InningRuns.swift in Sources */,
+				BB000000000000000000F034 /* GameRecord.swift in Sources */,
+				BB000000000000000000F035 /* GameState.swift in Sources */,
+				BB000000000000000000F036 /* GameTimer.swift in Sources */,
+				BB000000000000000000F037 /* SyncMessages.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1C0000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD0000000000000000000002 /* UmpireClicker Watch App */;
+			targetProxy = 1D0000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		FF0000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		FF0000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		FF0000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"UmpireClicker/Preview Content\"";
+				DEVELOPMENT_TEAM = BWY5VL5Y24;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.umpireclicker.UmpireClicker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FF0000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"UmpireClicker/Preview Content\"";
+				DEVELOPMENT_TEAM = BWY5VL5Y24;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.umpireclicker.UmpireClicker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FF0000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"UmpireClicker Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = BWY5VL5Y24;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = Umpire;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.umpireclicker.UmpireClicker;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				INFOPLIST_KEY_WKWatchOnly = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.umpireclicker.UmpireClicker.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		FF0000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"UmpireClicker Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = BWY5VL5Y24;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = Umpire;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.umpireclicker.UmpireClicker;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				INFOPLIST_KEY_WKWatchOnly = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.umpireclicker.UmpireClicker.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1A0000000000000000000001 /* Build configuration list for PBXProject "UmpireClicker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF0000000000000000000001 /* Debug */,
+				FF0000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1A0000000000000000000002 /* Build configuration list for PBXNativeTarget "UmpireClicker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF0000000000000000000003 /* Debug */,
+				FF0000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1A0000000000000000000003 /* Build configuration list for PBXNativeTarget "UmpireClicker Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF0000000000000000000005 /* Debug */,
+				FF0000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1B0000000000000000000001 /* Project object */;
+}
