@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "DD0000000000000000000002"
-               BuildableName = "UmpireClicker Watch App.app"
-               BlueprintName = "UmpireClicker Watch App"
+               BuildableName = "UmpireClickerTimer Watch App.app"
+               BlueprintName = "UmpireClickerTimer Watch App"
                ReferencedContainer = "container:UmpireClicker.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DD0000000000000000000002"
-            BuildableName = "UmpireClicker Watch App.app"
-            BlueprintName = "UmpireClicker Watch App"
+            BuildableName = "UmpireClickerTimer Watch App.app"
+            BlueprintName = "UmpireClickerTimer Watch App"
             ReferencedContainer = "container:UmpireClicker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DD0000000000000000000002"
-            BuildableName = "UmpireClicker Watch App.app"
-            BlueprintName = "UmpireClicker Watch App"
+            BuildableName = "UmpireClickerTimer Watch App.app"
+            BlueprintName = "UmpireClickerTimer Watch App"
             ReferencedContainer = "container:UmpireClicker.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
