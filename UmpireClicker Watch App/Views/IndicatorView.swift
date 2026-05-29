@@ -14,7 +14,11 @@ struct IndicatorView: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            scoreRow
+            if game.settings.keepScore {
+                scoreRow
+            } else {
+                inningOnlyRow
+            }
 
             HStack(spacing: 4) {
                 CountCell(
@@ -67,6 +71,23 @@ struct IndicatorView: View {
         }
         .padding(.horizontal, 2)
         .navigationTitle("Umpire")
+    }
+
+    private var inningOnlyRow: some View {
+        HStack {
+            Spacer()
+            HStack(spacing: 4) {
+                Text(game.half.symbol)
+                    .font(.caption2)
+                Text("Inn \(game.inning)")
+                    .font(.caption.bold())
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(Color.gray.opacity(0.25), in: RoundedRectangle(cornerRadius: 4))
+            Spacer()
+        }
     }
 
     private var scoreRow: some View {

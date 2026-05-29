@@ -112,10 +112,17 @@ public final class GameState {
         guard canEdit else { return }
         outs += 1
         if outs >= settings.maxOuts {
-            // Reset count, leave outs at max for display, flag run entry
             balls = 0
             strikes = 0
-            pendingRunsEntry = true
+            if settings.keepScore {
+                // Leave outs at max for display, flag run entry.
+                pendingRunsEntry = true
+            } else {
+                // Indicator-only: no runs entry — just roll straight to the
+                // next half so the clicker is ready to reuse.
+                outs = 0
+                advanceHalf()
+            }
         }
     }
 
@@ -135,9 +142,35 @@ public final class GameState {
     }
 
     /// Force the current half-inning to end (e.g. walk-off in the bottom of
-    /// the final inning, or any early end of half). Triggers runs entry.
+    /// the final inning, or any early end of half). When keeping score this
+    /// triggers runs entry; in indicator-only mode it just rolls to the next
+    /// half.
     public func forceEndOfHalf() {
         guard !isComplete && !pendingRunsEntry else { return }
+        if settings.keepScore {
+            pendingRunsEntry = true
+        } else {
+            balls = 0
+            strikes = 0
+            outs = 0
+            advanceHalf()
+        }
+    }
+
+    /// The umpire confirmed ending the game at the drop-dead time. The hard
+    /// deadline can land mid-inning, so the half in progress ends before three
+    /// outs — but its runs still count. When keeping score this opens runs
+    /// entry for the partial half (the cutoff branch in
+    /// `confirmRunsForCompletedHalf` then applies the revert once runs are in);
+    /// if a half is already awaiting runs we leave it to that flow. In
+    /// indicator-only mode there is nothing to record, so the game just ends.
+    public func endAtDropDead() {
+        guard !isComplete else { return }
+        guard settings.keepScore else {
+            endGame(.ballGameCutoff)
+            return
+        }
+        if pendingRunsEntry { return }
         pendingRunsEntry = true
     }
 

@@ -14,6 +14,7 @@ struct SettingsView: View {
     @AppStorage("settings_noNew")        private var noNew: Int = 50
     @AppStorage("settings_cutoff")       private var cutoff: Int = 60
     @AppStorage("settings_enforceDD")    private var enforceDropDead: Bool = true
+    @AppStorage("settings_keepScore")    private var keepScore: Bool = true
     @AppStorage("settings_maxBalls")     private var maxBalls: Int = 4
     @AppStorage("settings_maxStrikes")   private var maxStrikes: Int = 3
     @AppStorage("settings_maxOuts")      private var maxOuts: Int = 3
@@ -25,6 +26,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Mode") {
+                    Toggle(isOn: $keepScore) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Keep score")
+                            Text(keepScore
+                                 ? "Tracks runs, innings, line score and end-of-game rules."
+                                 : "Indicator only — balls / strikes / outs plus the game clock.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("Sport") {
                     Picker("Sport", selection: $sportRaw) {
                         ForEach(Sport.allCases) { s in
@@ -94,7 +108,8 @@ struct SettingsView: View {
             maxOuts: maxOuts,
             awayTeamName: awayName,
             homeTeamName: homeName,
-            enforceDropDead: enforceDropDead
+            enforceDropDead: enforceDropDead,
+            keepScore: keepScore
         )
     }
 

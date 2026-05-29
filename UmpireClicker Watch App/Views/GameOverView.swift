@@ -13,6 +13,7 @@ struct GameOverView: View {
     let reason: GameEndReason
     let lineScore: [InningRuns]
     let elapsed: TimeInterval
+    var keepScore: Bool = true
     let onDismiss: () -> Void
 
     var body: some View {
@@ -22,22 +23,28 @@ struct GameOverView: View {
                     .font(.caption2.bold())
                     .foregroundStyle(reasonColor)
 
-                HStack(spacing: 8) {
-                    teamScore(name: awayName, score: awayScore, isWinner: awayScore > homeScore)
-                    Text("–")
-                    teamScore(name: homeName, score: homeScore, isWinner: homeScore > awayScore)
-                }
+                if keepScore {
+                    HStack(spacing: 8) {
+                        teamScore(name: awayName, score: awayScore, isWinner: awayScore > homeScore)
+                        Text("–")
+                        teamScore(name: homeName, score: homeScore, isWinner: homeScore > awayScore)
+                    }
 
-                Text(headline)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                    Text(headline)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                } else {
+                    Text("Game ended")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Text("Game time: \(GameTimer.format(elapsed))")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 
-                if !lineScore.isEmpty {
+                if keepScore && !lineScore.isEmpty {
                     Divider()
                     miniLineScore
                 }

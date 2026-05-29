@@ -21,6 +21,11 @@ public struct GameSettings: Codable, Equatable {
     /// (with the standard revert-to-last-lead rule). If false, the timer is
     /// purely advisory — the umpire decides when to call it.
     public var enforceDropDead: Bool
+    /// If true (default), the app tracks runs, innings, the line score and
+    /// all end-of-game-by-score rules. If false, the app is a pure timed
+    /// umpire indicator: balls / strikes / outs plus the game clock, with no
+    /// scoreboard, line score, runs entry or score-based game end.
+    public var keepScore: Bool
 
     public init(
         sport: Sport = .softball,
@@ -31,7 +36,8 @@ public struct GameSettings: Codable, Equatable {
         maxOuts: Int = 3,
         awayTeamName: String = "Away",
         homeTeamName: String = "Home",
-        enforceDropDead: Bool = true
+        enforceDropDead: Bool = true,
+        keepScore: Bool = true
     ) {
         self.sport = sport
         self.noNewInningsMinutes = noNewInningsMinutes
@@ -42,13 +48,14 @@ public struct GameSettings: Codable, Equatable {
         self.awayTeamName = awayTeamName
         self.homeTeamName = homeTeamName
         self.enforceDropDead = enforceDropDead
+        self.keepScore = keepScore
     }
 
-    // Backward-compatible decoding for records persisted before this field existed.
+    // Backward-compatible decoding for records persisted before these fields existed.
     enum CodingKeys: String, CodingKey {
         case sport, noNewInningsMinutes, ballGameCutoffMinutes
         case maxBalls, maxStrikes, maxOuts
-        case awayTeamName, homeTeamName, enforceDropDead
+        case awayTeamName, homeTeamName, enforceDropDead, keepScore
     }
 
     public init(from decoder: Decoder) throws {
@@ -62,6 +69,7 @@ public struct GameSettings: Codable, Equatable {
         awayTeamName          = try c.decode(String.self, forKey: .awayTeamName)
         homeTeamName          = try c.decode(String.self, forKey: .homeTeamName)
         enforceDropDead       = try c.decodeIfPresent(Bool.self, forKey: .enforceDropDead) ?? true
+        keepScore             = try c.decodeIfPresent(Bool.self, forKey: .keepScore) ?? true
     }
 
     public static let `default` = GameSettings()

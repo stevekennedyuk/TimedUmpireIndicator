@@ -21,6 +21,7 @@ struct SetupView: View {
     @State private var noNew: Int = 50
     @State private var cutoff: Int = 60
     @State private var enforceDropDead: Bool = true
+    @State private var keepScore: Bool = true
     @State private var awayName: String = "Away"
     @State private var homeName: String = "Home"
     @State private var showEndConfirm = false
@@ -28,6 +29,18 @@ struct SetupView: View {
 
     var body: some View {
         List {
+            Toggle(isOn: $keepScore) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Keep score")
+                        .font(.caption2)
+                    Text(keepScore ? "Full scorekeeping" : "Indicator + clock only")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            .tint(.green)
+
             Picker("Sport", selection: $sport) {
                 ForEach(Sport.allCases) { s in
                     Text(s.displayName).tag(s)
@@ -56,6 +69,7 @@ struct SetupView: View {
                 s.noNewInningsMinutes = noNew
                 s.ballGameCutoffMinutes = cutoff
                 s.enforceDropDead = enforceDropDead
+                s.keepScore = keepScore
                 s.awayTeamName = awayName
                 s.homeTeamName = homeName
                 onStart(s)
@@ -89,6 +103,7 @@ struct SetupView: View {
             noNew = settings.noNewInningsMinutes
             cutoff = settings.ballGameCutoffMinutes
             enforceDropDead = settings.enforceDropDead
+            keepScore = settings.keepScore
             awayName = settings.awayTeamName
             homeName = settings.homeTeamName
             didLoad = true

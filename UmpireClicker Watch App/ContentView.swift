@@ -32,8 +32,10 @@ struct ContentView: View {
             TimerView(timer: timer, game: game)
                 .tag(1)
 
-            LineScoreView(game: game)
-                .tag(2)
+            if game.settings.keepScore {
+                LineScoreView(game: game)
+                    .tag(2)
+            }
 
             SetupView(
                 hasStarted: hasStarted,
@@ -48,7 +50,7 @@ struct ContentView: View {
         .tabViewStyle(.page)
         .onReceive(tick) { _ in
             timer.tick()
-            guard hasStarted && !game.isComplete else { return }
+            guard hasStarted && !game.isComplete && !game.pendingRunsEntry else { return }
             if timer.isCutoffTriggered
                 && !game.dropDeadOverridden
                 && game.settings.enforceDropDead
@@ -58,7 +60,10 @@ struct ContentView: View {
                 }
                 return   // wait for the umpire's decision
             }
-            if timer.isNoNewInningsTriggered && game.leader == .home {
+            if game.settings.keepScore
+                && timer.isNoNewInningsTriggered
+                && game.leader == .home
+            {
                 game.endForNoNewInningsHomeLeads()
             }
         }
@@ -70,8 +75,10 @@ struct ContentView: View {
                 timer.pause()
                 showRunsEntry = false
                 showGameOver = true
-                let record = game.buildRecord(durationSeconds: timer.elapsed)
-                sync.sendGameRecord(record)
+                if game.settings.keepScore {
+                    let record = game.buildRecord(durationSeconds: timer.elapsed)
+                    sync.sendGameRecord(record)
+                }
             }
         }
         .sheet(isPresented: $showRunsEntry) {
@@ -96,7 +103,8 @@ struct ContentView: View {
                 homeScore: game.homeScore,
                 reason: game.endReason ?? .manual,
                 lineScore: game.lineScore,
-                elapsed: timer.elapsed
+                elapsed: timer.elapsed,
+                keepScore: game.settings.keepScore
             ) {
                 showGameOver = false
             }
@@ -107,13 +115,17 @@ struct ContentView: View {
             titleVisibility: .visible
         ) {
             Button("End game", role: .destructive) {
-                game.applyDropDead()
+                game.endAtDropDead()
             }
             Button("Play on") {
                 game.dropDeadOverridden = true
             }
         } message: {
-            Text("\(GameTimer.format(timer.elapsed)) elapsed. End now (revert to last lead) or keep playing?")
+            if game.settings.keepScore {
+                Text("\(GameTimer.format(timer.elapsed)) elapsed. End now (revert to last lead) or keep playing?")
+            } else {
+                Text("\(GameTimer.format(timer.elapsed)) elapsed. End the game or keep playing?")
+            }
         }
     }
 
