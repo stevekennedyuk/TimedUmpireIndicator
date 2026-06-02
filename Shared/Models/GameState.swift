@@ -106,14 +106,16 @@ public final class GameState {
         strikes = max(0, strikes - 1)
     }
 
-    /// Increment the out count. On the third out the half-inning ends and
-    /// the app prompts the umpire for runs scored.
+    /// Increment the out count. A new batter steps in after every out, so the
+    /// ball/strike count always resets. On the third out the half-inning ends
+    /// and (when keeping score) the app prompts the umpire for runs scored.
     public func incrementOut() {
         guard canEdit else { return }
         outs += 1
+        // A new batter is up after any out — always clear the count.
+        balls = 0
+        strikes = 0
         if outs >= settings.maxOuts {
-            balls = 0
-            strikes = 0
             if settings.keepScore {
                 // Leave outs at max for display, flag run entry.
                 pendingRunsEntry = true
