@@ -10,6 +10,12 @@
 import SwiftUI
 
 struct ContentView: View {
+    /// The last-used settings, persisted across games and app launches so the
+    /// umpire doesn't have to reconfigure between games. Encoded as JSON in
+    /// UserDefaults. Updated whenever a game is started and whenever the phone
+    /// pushes new defaults.
+    @AppStorage("watch_lastSettings") private var storedSettingsData: Data = Data()
+
     @State private var game: GameState = GameState(settings: .default)
     @State private var timer: GameTimer = GameTimer(
         noNewInningsMinutes: GameSettings.default.noNewInningsMinutes,
@@ -23,6 +29,17 @@ struct ContentView: View {
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let sync = WatchSessionManager.shared
+
+    /// Decode the persisted settings, falling back to defaults the first time.
+    private var persistedSettings: GameSettings {
+        (try? JSONDecoder().decode(GameSettings.self, from: storedSettingsData)) ?? .default
+    }
+
+    private func persist(_ settings: GameSettings) {
+        if let data = try? JSONEncoder().encode(settings) {
+            storedSettingsData = data
+        }
+    }
 
     var body: some View {
         TabView(selection: $selection) {
@@ -40,7 +57,7 @@ struct ContentView: View {
             SetupView(
                 hasStarted: hasStarted,
                 gameIsComplete: game.isComplete,
-                settings: game.settings,
+                settings: persistedSettings,
                 onStart: startGame,
                 onEndManually: endGameManually,
                 onResetTimer: { timer.reset() }
@@ -48,6 +65,23 @@ struct ContentView: View {
             .tag(3)
         }
         .tabViewStyle(.page)
+        .onAppear {
+            // Seed the first game from the last-used settings so the Setup
+            // screen and any quick-start reflect prior choices (including the
+            // tie rule) rather than hard defaults.
+            if !hasStarted {
+                game.settings = persistedSettings
+            }
+        }
+        .onChange(of: sync.lastReceivedSettings) { _, newValue in
+            // When the phone pushes new defaults, persist them so they carry
+            // forward, and apply to the idle game so Setup reflects them.
+            guard let newValue else { return }
+            persist(newValue)
+            if !hasStarted || game.isComplete {
+                game.settings = newValue
+            }
+        }
         .onReceive(tick) { _ in
             timer.tick()
             guard hasStarted && !game.isComplete && !game.pendingRunsEntry else { return }
@@ -110,23 +144,75 @@ struct ContentView: View {
             }
         }
         .confirmationDialog(
-            "Drop-dead time",
+            dropDeadTitle,
             isPresented: $showDropDeadConfirm,
             titleVisibility: .visible
         ) {
-            Button("End game", role: .destructive) {
-                game.endAtDropDead()
+            if !game.settings.keepScore {
+                // Indicator-only: simple end / play on.
+                Button("End game", role: .destructive) {
+                    game.endAtDropDead()
+                }
+            } else if game.homeWinsOnCutoff {
+                // Home batting and ahead — score stands.
+                Button("End — \(game.settings.homeTeamName) win", role: .destructive) {
+                    game.endAtDropDead()
+                }
+            } else {
+                // Revert needed. Offer the configured rule as primary, and the
+                // opposite tie preference as an alternative.
+                let preferred = game.dropDeadPreview(allowTies: game.settings.allowTies)
+                Button(dropDeadResultLabel(preferred, prefix: "End"), role: .destructive) {
+                    game.endAtDropDead(allowTiesOverride: game.settings.allowTies)
+                }
+                // Alternative: flip the tie rule, but only if it yields a
+                // different result.
+                let alt = game.dropDeadPreview(allowTies: !game.settings.allowTies)
+                if alt.away != preferred.away || alt.home != preferred.home {
+                    let altLabel = game.settings.allowTies
+                        ? dropDeadResultLabel(alt, prefix: "No tie —")
+                        : dropDeadResultLabel(alt, prefix: "Allow tie —")
+                    Button(altLabel) {
+                        game.endAtDropDead(allowTiesOverride: !game.settings.allowTies)
+                    }
+                }
             }
             Button("Play on") {
                 game.dropDeadOverridden = true
             }
         } message: {
-            if game.settings.keepScore {
-                Text("\(GameTimer.format(timer.elapsed)) elapsed. End now (revert to last lead) or keep playing?")
-            } else {
-                Text("\(GameTimer.format(timer.elapsed)) elapsed. End the game or keep playing?")
-            }
+            Text(dropDeadMessage)
         }
+    }
+
+    // MARK: - Drop-dead dialog text
+
+    private var dropDeadTitle: String {
+        "Cut-off reached"
+    }
+
+    private var dropDeadMessage: String {
+        let elapsed = GameTimer.format(timer.elapsed)
+        guard game.settings.keepScore else {
+            return "\(elapsed) elapsed. End the game or keep playing?"
+        }
+        if game.homeWinsOnCutoff {
+            return "\(elapsed) elapsed. \(game.settings.homeTeamName) lead while batting — the score stands."
+        }
+        return "\(elapsed) elapsed. The current inning is incomplete, so the score reverts to the last completed inning."
+    }
+
+    private func dropDeadResultLabel(
+        _ preview: (away: Int, home: Int, inning: Int?, tied: Bool),
+        prefix: String
+    ) -> String {
+        let a = game.settings.awayTeamName
+        let h = game.settings.homeTeamName
+        let score = "\(a) \(preview.away)\u{2013}\(preview.home) \(h)"
+        if let inn = preview.inning {
+            return "\(prefix) \(score) (end \(inn))"
+        }
+        return "\(prefix) \(score)"
     }
 
     private var teamBatting: String {
@@ -136,6 +222,9 @@ struct ContentView: View {
     // MARK: - Actions
 
     private func startGame(settings: GameSettings) {
+        // Persist so these settings carry forward to the next game and survive
+        // relaunch. The umpire can still change anything in Setup next time.
+        persist(settings)
         game = GameState(settings: settings)
         timer = GameTimer(
             noNewInningsMinutes: settings.noNewInningsMinutes,

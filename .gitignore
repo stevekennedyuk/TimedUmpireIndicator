@@ -52,6 +52,9 @@ fastlane/test_output
 Dependencies/
 .accio/
 
+# App Store marketing assets — keep the generator script, ignore generated PNGs
+AppStore/screenshots/*.png
+
 # Misc
 *.swp
 *~

@@ -22,6 +22,7 @@ struct SetupView: View {
     @State private var cutoff: Int = 60
     @State private var enforceDropDead: Bool = true
     @State private var keepScore: Bool = true
+    @State private var allowTies: Bool = true
     @State private var awayName: String = "Away"
     @State private var homeName: String = "Home"
     @State private var showEndConfirm = false
@@ -63,6 +64,20 @@ struct SetupView: View {
             .toggleStyle(.switch)
             .tint(.red)
 
+            if keepScore {
+                Toggle(isOn: $allowTies) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Allow ties")
+                            .font(.caption2)
+                        Text(allowTies ? "Round-robin" : "Finals — no tie")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .toggleStyle(.switch)
+                .tint(.blue)
+            }
+
             Button {
                 var s = settings
                 s.sport = sport
@@ -70,6 +85,7 @@ struct SetupView: View {
                 s.ballGameCutoffMinutes = cutoff
                 s.enforceDropDead = enforceDropDead
                 s.keepScore = keepScore
+                s.allowTies = allowTies
                 s.awayTeamName = awayName
                 s.homeTeamName = homeName
                 onStart(s)
@@ -99,19 +115,32 @@ struct SetupView: View {
         .navigationTitle("Setup")
         .onAppear {
             guard !didLoad else { return }
-            sport = settings.sport
-            noNew = settings.noNewInningsMinutes
-            cutoff = settings.ballGameCutoffMinutes
-            enforceDropDead = settings.enforceDropDead
-            keepScore = settings.keepScore
-            awayName = settings.awayTeamName
-            homeName = settings.homeTeamName
+            loadFromSettings()
             didLoad = true
+        }
+        .onChange(of: settings) { _, _ in
+            // Reflect externally-changed settings (a finished game carrying
+            // forward, or a fresh push from the phone) — but never while a game
+            // is live, so we don't disturb the umpire mid-game.
+            if !hasStarted || gameIsComplete {
+                loadFromSettings()
+            }
         }
         .confirmationDialog("End the game?", isPresented: $showEndConfirm, titleVisibility: .visible) {
             Button("End Game", role: .destructive, action: onEndManually)
             Button("Cancel", role: .cancel) {}
         }
+    }
+
+    private func loadFromSettings() {
+        sport = settings.sport
+        noNew = settings.noNewInningsMinutes
+        cutoff = settings.ballGameCutoffMinutes
+        enforceDropDead = settings.enforceDropDead
+        keepScore = settings.keepScore
+        allowTies = settings.allowTies
+        awayName = settings.awayTeamName
+        homeName = settings.homeTeamName
     }
 
     private func stepperRow(label: String, value: Binding<Int>, range: ClosedRange<Int>, step: Int, tint: Color) -> some View {

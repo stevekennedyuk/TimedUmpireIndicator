@@ -15,6 +15,7 @@ struct SettingsView: View {
     @AppStorage("settings_cutoff")       private var cutoff: Int = 60
     @AppStorage("settings_enforceDD")    private var enforceDropDead: Bool = true
     @AppStorage("settings_keepScore")    private var keepScore: Bool = true
+    @AppStorage("settings_allowTies")    private var allowTies: Bool = true
     @AppStorage("settings_maxBalls")     private var maxBalls: Int = 4
     @AppStorage("settings_maxStrikes")   private var maxStrikes: Int = 3
     @AppStorage("settings_maxOuts")      private var maxOuts: Int = 3
@@ -35,6 +36,18 @@ struct SettingsView: View {
                                  : "Indicator only — balls / strikes / outs plus the game clock.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
+                        }
+                    }
+                    if keepScore {
+                        Toggle(isOn: $allowTies) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Allow ties")
+                                Text(allowTies
+                                     ? "Round-robin — a game may end tied."
+                                     : "Finals — no tie; reverts to the last decided inning.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -109,7 +122,8 @@ struct SettingsView: View {
             awayTeamName: awayName,
             homeTeamName: homeName,
             enforceDropDead: enforceDropDead,
-            keepScore: keepScore
+            keepScore: keepScore,
+            allowTies: allowTies
         )
     }
 

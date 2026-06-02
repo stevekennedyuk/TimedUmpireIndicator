@@ -157,21 +157,32 @@ public final class GameState {
         }
     }
 
-    /// The umpire confirmed ending the game at the drop-dead time. The hard
-    /// deadline can land mid-inning, so the half in progress ends before three
-    /// outs — but its runs still count. When keeping score this opens runs
-    /// entry for the partial half (the cutoff branch in
-    /// `confirmRunsForCompletedHalf` then applies the revert once runs are in);
-    /// if a half is already awaiting runs we leave it to that flow. In
-    /// indicator-only mode there is nothing to record, so the game just ends.
-    public func endAtDropDead() {
+    /// The umpire confirmed ending the game at the drop-dead time.
+    ///
+    /// Cases:
+    ///  - Indicator-only (no scorekeeping): nothing to record, end now.
+    ///  - Home batting while ahead: home has won, score stands as-is, end now.
+    ///  - Otherwise (away batting, or home behind/tied): the in-progress inning
+    ///    is incomplete, so revert to the last completed inning per the
+    ///    configured tie rule. The caller may pass an explicit `allowTies`
+    ///    override chosen at the end dialog; nil uses the configured setting.
+    public func endAtDropDead(allowTiesOverride: Bool? = nil) {
         guard !isComplete else { return }
         guard settings.keepScore else {
             endGame(.ballGameCutoff)
             return
         }
-        if pendingRunsEntry { return }
-        pendingRunsEntry = true
+        // Home batting and ahead at the cutoff: the score stands.
+        if homeWinsOnCutoff {
+            pendingRunsEntry = false
+            endGame(.ballGameCutoff)
+            return
+        }
+        if let override = allowTiesOverride {
+            applyDropDead(allowTies: override)
+        } else {
+            applyDropDead()
+        }
     }
 
     private var canEdit: Bool {
@@ -295,23 +306,79 @@ public final class GameState {
         return false
     }
 
-    /// Apply the drop-dead rule: revert score to the most recent half-inning
-    /// at the end of which a team was ahead.
-    public func applyDropDead() {
-        if let idx = halfHistory.lastIndex(where: { $0.leader != .tied }) {
-            let snap = halfHistory[idx]
+    /// Apply the drop-dead rule. The hard deadline can land mid-inning, so the
+    /// inning in progress is incomplete and its runs are dropped — the game
+    /// reverts to the end of the last COMPLETED inning (both halves played).
+    ///
+    /// Exceptions handled by the caller before this point:
+    ///  - Home batting while ahead: the score stands (home has won); this is
+    ///    decided in `endAtDropDead`/the dialog, not here.
+    ///
+    /// Tie handling:
+    ///  - allowTies (round-robin): revert to the last completed inning even if
+    ///    that inning was tied.
+    ///  - no tie (finals): walk further back to the last completed inning at
+    ///    which one team was ahead. If none exists, end at the earliest
+    ///    available result (a tie is unavoidable).
+    public func applyDropDead(allowTies: Bool? = nil) {
+        let useAllowTies = allowTies ?? settings.allowTies
+        let snapshots = completedInningSnapshots()
+
+        let target: ScoreSnapshot?
+        if useAllowTies {
+            target = snapshots.last
+        } else {
+            target = snapshots.last(where: { $0.leader != .tied }) ?? snapshots.last
+        }
+
+        if let snap = target {
             awayScore = snap.awayScore
             homeScore = snap.homeScore
             truncateLineScore(after: snap)
-            halfHistory = Array(halfHistory.prefix(through: idx))
+            if let idx = halfHistory.lastIndex(where: {
+                $0.inning == snap.inning && $0.half == snap.half
+            }) {
+                halfHistory = Array(halfHistory.prefix(through: idx))
+            }
         } else {
-            // No team was ever ahead — call it scoreless.
+            // Nothing completed at all — scoreless.
             awayScore = 0
             homeScore = 0
             lineScore.removeAll()
             halfHistory.removeAll()
         }
         endGame(.ballGameCutoff)
+    }
+
+    /// The end-of-(bottom)-half snapshots representing fully completed innings,
+    /// in order. A completed inning is one whose bottom half has been played
+    /// and recorded. Used as revert targets for the cutoff rule.
+    private func completedInningSnapshots() -> [ScoreSnapshot] {
+        halfHistory.filter { $0.half == .bottom }
+    }
+
+    /// What the drop-dead revert WOULD produce, without mutating state, so the
+    /// UI can suggest the outcome to the umpire before they confirm. Pass the
+    /// tie preference being previewed (defaults to the configured setting).
+    public func dropDeadPreview(allowTies: Bool? = nil) -> (away: Int, home: Int, inning: Int?, tied: Bool) {
+        let useAllowTies = allowTies ?? settings.allowTies
+        let snapshots = completedInningSnapshots()
+        let target: ScoreSnapshot?
+        if useAllowTies {
+            target = snapshots.last
+        } else {
+            target = snapshots.last(where: { $0.leader != .tied }) ?? snapshots.last
+        }
+        if let snap = target {
+            return (snap.awayScore, snap.homeScore, snap.inning, snap.leader == .tied)
+        }
+        return (0, 0, nil, true)
+    }
+
+    /// True when the cutoff has landed while the home team is batting and
+    /// already ahead — in which case the score stands and no revert applies.
+    public var homeWinsOnCutoff: Bool {
+        half == .bottom && leader == .home
     }
 
     private func truncateLineScore(after snap: ScoreSnapshot) {

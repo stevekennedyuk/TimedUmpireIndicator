@@ -26,6 +26,11 @@ public struct GameSettings: Codable, Equatable {
     /// umpire indicator: balls / strikes / outs plus the game clock, with no
     /// scoreboard, line score, runs entry or score-based game end.
     public var keepScore: Bool
+    /// If true (default), the game may end in a tie (round-robin play). If
+    /// false (finals), a tie is not allowed: when the cutoff forces a revert
+    /// and the target inning is tied, the app walks back to the last completed
+    /// inning at which one team was ahead.
+    public var allowTies: Bool
 
     public init(
         sport: Sport = .softball,
@@ -37,7 +42,8 @@ public struct GameSettings: Codable, Equatable {
         awayTeamName: String = "Away",
         homeTeamName: String = "Home",
         enforceDropDead: Bool = true,
-        keepScore: Bool = true
+        keepScore: Bool = true,
+        allowTies: Bool = true
     ) {
         self.sport = sport
         self.noNewInningsMinutes = noNewInningsMinutes
@@ -49,13 +55,14 @@ public struct GameSettings: Codable, Equatable {
         self.homeTeamName = homeTeamName
         self.enforceDropDead = enforceDropDead
         self.keepScore = keepScore
+        self.allowTies = allowTies
     }
 
     // Backward-compatible decoding for records persisted before these fields existed.
     enum CodingKeys: String, CodingKey {
         case sport, noNewInningsMinutes, ballGameCutoffMinutes
         case maxBalls, maxStrikes, maxOuts
-        case awayTeamName, homeTeamName, enforceDropDead, keepScore
+        case awayTeamName, homeTeamName, enforceDropDead, keepScore, allowTies
     }
 
     public init(from decoder: Decoder) throws {
@@ -70,6 +77,7 @@ public struct GameSettings: Codable, Equatable {
         homeTeamName          = try c.decode(String.self, forKey: .homeTeamName)
         enforceDropDead       = try c.decodeIfPresent(Bool.self, forKey: .enforceDropDead) ?? true
         keepScore             = try c.decodeIfPresent(Bool.self, forKey: .keepScore) ?? true
+        allowTies             = try c.decodeIfPresent(Bool.self, forKey: .allowTies) ?? true
     }
 
     public static let `default` = GameSettings()
