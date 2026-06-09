@@ -59,6 +59,23 @@ public final class GameState {
     /// prompt, or implied when settings.enforceDropDead is false.
     public var dropDeadOverridden: Bool = false
 
+    // MARK: - Inactivity tracking
+
+    /// Timestamp of the last umpire interaction. Used to auto-close the app
+    /// after a configurable idle period once the game is in the cut-off /
+    /// overtime phase. Updated by every count/score mutator.
+    public private(set) var lastActivityAt: Date = .now
+
+    /// Record umpire activity, resetting the inactivity countdown.
+    public func registerActivity() {
+        lastActivityAt = .now
+    }
+
+    /// Seconds since the last interaction.
+    public func secondsSinceActivity(now: Date = .now) -> TimeInterval {
+        now.timeIntervalSince(lastActivityAt)
+    }
+
     // MARK: - Init
 
     public init(
@@ -77,6 +94,7 @@ public final class GameState {
     /// Runs from the walk are recorded by the umpire at the end of the half.
     public func incrementBall() {
         guard canEdit else { return }
+        registerActivity()
         balls += 1
         if balls >= settings.maxBalls {
             balls = 0
@@ -86,6 +104,7 @@ public final class GameState {
 
     public func decrementBall() {
         guard canEdit else { return }
+        registerActivity()
         balls = max(0, balls - 1)
     }
 
@@ -93,6 +112,7 @@ public final class GameState {
     /// out is recorded.
     public func incrementStrike() {
         guard canEdit else { return }
+        registerActivity()
         strikes += 1
         if strikes >= settings.maxStrikes {
             balls = 0
@@ -103,6 +123,7 @@ public final class GameState {
 
     public func decrementStrike() {
         guard canEdit else { return }
+        registerActivity()
         strikes = max(0, strikes - 1)
     }
 
@@ -111,6 +132,7 @@ public final class GameState {
     /// and (when keeping score) the app prompts the umpire for runs scored.
     public func incrementOut() {
         guard canEdit else { return }
+        registerActivity()
         outs += 1
         // A new batter is up after any out — always clear the count.
         balls = 0
@@ -130,6 +152,7 @@ public final class GameState {
 
     public func decrementOut() {
         guard canEdit else { return }
+        registerActivity()
         if pendingRunsEntry {
             pendingRunsEntry = false
         }
@@ -202,6 +225,7 @@ public final class GameState {
         cutoffTriggered: Bool
     ) {
         guard pendingRunsEntry else { return }
+        registerActivity()
 
         let normalisedRuns = max(0, runs)
         upsertLineScore(inning: inning, half: half, runs: normalisedRuns)
@@ -408,6 +432,12 @@ public final class GameState {
     /// team ahead. Called from the timer tick.
     public func endForNoNewInningsHomeLeads() {
         endGame(.noNewInningsHomeAhead)
+    }
+
+    /// End the game because the umpire was inactive past the configured idle
+    /// timeout while in the cut-off / overtime phase.
+    public func endForInactivity() {
+        endGame(.inactivity)
     }
 
     private func endGame(_ reason: GameEndReason) {

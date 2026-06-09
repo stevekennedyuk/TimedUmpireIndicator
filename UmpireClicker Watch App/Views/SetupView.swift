@@ -23,6 +23,8 @@ struct SetupView: View {
     @State private var enforceDropDead: Bool = true
     @State private var keepScore: Bool = true
     @State private var allowTies: Bool = true
+    @State private var autoClose: Bool = true
+    @State private var idleTimeout: Int = 20
     @State private var awayName: String = "Away"
     @State private var homeName: String = "Home"
     @State private var showEndConfirm = false
@@ -78,6 +80,22 @@ struct SetupView: View {
                 .tint(.blue)
             }
 
+            Toggle(isOn: $autoClose) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Auto-close when idle")
+                        .font(.caption2)
+                    Text(autoClose ? "After cutoff, ends if idle" : "Off")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            .tint(.purple)
+
+            if autoClose {
+                stepperRow(label: "Idle limit (min)", value: $idleTimeout, range: 5...60, step: 5, tint: .purple)
+            }
+
             Button {
                 var s = settings
                 s.sport = sport
@@ -86,6 +104,8 @@ struct SetupView: View {
                 s.enforceDropDead = enforceDropDead
                 s.keepScore = keepScore
                 s.allowTies = allowTies
+                s.autoCloseOnInactivity = autoClose
+                s.inactivityTimeoutMinutes = idleTimeout
                 s.awayTeamName = awayName
                 s.homeTeamName = homeName
                 onStart(s)
@@ -139,6 +159,8 @@ struct SetupView: View {
         enforceDropDead = settings.enforceDropDead
         keepScore = settings.keepScore
         allowTies = settings.allowTies
+        autoClose = settings.autoCloseOnInactivity
+        idleTimeout = settings.inactivityTimeoutMinutes
         awayName = settings.awayTeamName
         homeName = settings.homeTeamName
     }

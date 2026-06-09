@@ -82,6 +82,7 @@ struct GameOverView: View {
         case .noNewInningsHomeAhead: return .orange
         case .regulationComplete:    return .green
         case .manual:                return .gray
+        case .inactivity:            return .purple
         }
     }
 

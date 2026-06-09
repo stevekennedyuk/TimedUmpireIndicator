@@ -57,6 +57,9 @@ public enum GameEndReason: String, Codable {
     case ballGameCutoff
     /// Umpire ended the game manually.
     case manual
+    /// Auto-ended after the configured idle period with no umpire interaction
+    /// while in the cut-off / overtime phase.
+    case inactivity
 
     public var displayName: String {
         switch self {
@@ -64,6 +67,7 @@ public enum GameEndReason: String, Codable {
         case .noNewInningsHomeAhead:  return "Time / Home leading"
         case .ballGameCutoff:         return "Drop-dead"
         case .manual:                 return "Called"
+        case .inactivity:             return "Auto-ended (idle)"
         }
     }
 }

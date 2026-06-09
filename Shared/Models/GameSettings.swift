@@ -31,6 +31,13 @@ public struct GameSettings: Codable, Equatable {
     /// and the target inning is tied, the app walks back to the last completed
     /// inning at which one team was ahead.
     public var allowTies: Bool
+    /// If true (default), once the game reaches the cut-off / overtime phase
+    /// and there is no umpire interaction for `inactivityTimeoutMinutes`, the
+    /// app auto-ends the game, releases its session and returns to Setup.
+    public var autoCloseOnInactivity: Bool
+    /// Minutes of no interaction (while in cut-off / overtime) before the
+    /// inactivity auto-close fires. Default 20.
+    public var inactivityTimeoutMinutes: Int
 
     public init(
         sport: Sport = .softball,
@@ -43,7 +50,9 @@ public struct GameSettings: Codable, Equatable {
         homeTeamName: String = "Home",
         enforceDropDead: Bool = true,
         keepScore: Bool = true,
-        allowTies: Bool = true
+        allowTies: Bool = true,
+        autoCloseOnInactivity: Bool = true,
+        inactivityTimeoutMinutes: Int = 20
     ) {
         self.sport = sport
         self.noNewInningsMinutes = noNewInningsMinutes
@@ -56,6 +65,8 @@ public struct GameSettings: Codable, Equatable {
         self.enforceDropDead = enforceDropDead
         self.keepScore = keepScore
         self.allowTies = allowTies
+        self.autoCloseOnInactivity = autoCloseOnInactivity
+        self.inactivityTimeoutMinutes = inactivityTimeoutMinutes
     }
 
     // Backward-compatible decoding for records persisted before these fields existed.
@@ -63,6 +74,7 @@ public struct GameSettings: Codable, Equatable {
         case sport, noNewInningsMinutes, ballGameCutoffMinutes
         case maxBalls, maxStrikes, maxOuts
         case awayTeamName, homeTeamName, enforceDropDead, keepScore, allowTies
+        case autoCloseOnInactivity, inactivityTimeoutMinutes
     }
 
     public init(from decoder: Decoder) throws {
@@ -78,6 +90,8 @@ public struct GameSettings: Codable, Equatable {
         enforceDropDead       = try c.decodeIfPresent(Bool.self, forKey: .enforceDropDead) ?? true
         keepScore             = try c.decodeIfPresent(Bool.self, forKey: .keepScore) ?? true
         allowTies             = try c.decodeIfPresent(Bool.self, forKey: .allowTies) ?? true
+        autoCloseOnInactivity = try c.decodeIfPresent(Bool.self, forKey: .autoCloseOnInactivity) ?? true
+        inactivityTimeoutMinutes = try c.decodeIfPresent(Int.self, forKey: .inactivityTimeoutMinutes) ?? 20
     }
 
     public static let `default` = GameSettings()

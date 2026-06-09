@@ -85,6 +85,18 @@ struct ContentView: View {
         .onReceive(tick) { _ in
             timer.tick()
             guard hasStarted && !game.isComplete && !game.pendingRunsEntry else { return }
+
+            // Inactivity auto-close: once the game is in the cut-off / overtime
+            // phase, end it after the configured idle period with no umpire
+            // interaction, then tear down and return to Setup.
+            if game.settings.autoCloseOnInactivity
+                && timer.isNoNewInningsTriggered
+                && game.secondsSinceActivity() >= TimeInterval(game.settings.inactivityTimeoutMinutes * 60)
+            {
+                game.endForInactivity()
+                return
+            }
+
             if timer.isCutoffTriggered
                 && !game.dropDeadOverridden
                 && game.settings.enforceDropDead
@@ -108,10 +120,17 @@ struct ContentView: View {
             if ended {
                 timer.pause()
                 showRunsEntry = false
-                showGameOver = true
                 if game.settings.keepScore {
                     let record = game.buildRecord(durationSeconds: timer.elapsed)
                     sync.sendGameRecord(record)
+                }
+                if game.endReason == .inactivity {
+                    // Idle auto-close: don't hold a game-over sheet open with
+                    // nobody watching. Record (above), then tear the session
+                    // down and return to Setup so watchOS can suspend us.
+                    teardownToIdle()
+                } else {
+                    showGameOver = true
                 }
             }
         }
@@ -178,6 +197,7 @@ struct ContentView: View {
                 }
             }
             Button("Play on") {
+                game.registerActivity()
                 game.dropDeadOverridden = true
             }
         } message: {
@@ -222,9 +242,14 @@ struct ContentView: View {
     // MARK: - Actions
 
     private func startGame(settings: GameSettings) {
-        // Persist so these settings carry forward to the next game and survive
-        // relaunch. The umpire can still change anything in Setup next time.
-        persist(settings)
+        // Persist the rules so they carry forward to the next game and survive
+        // relaunch — but team names are per-game, so reset them to Away/Home
+        // each time. The umpire can still type new names in Setup beforehand.
+        var carried = settings
+        carried.awayTeamName = "Away"
+        carried.homeTeamName = "Home"
+        persist(carried)
+
         game = GameState(settings: settings)
         timer = GameTimer(
             noNewInningsMinutes: settings.noNewInningsMinutes,
@@ -233,6 +258,25 @@ struct ContentView: View {
         timer.start()
         hasStarted = true
         selection = 0
+    }
+
+    /// Tear the active game down to an idle state: stop the clock, release the
+    /// game/timer objects, close any sheets, and return to the Setup tab so
+    /// watchOS can suspend and reclaim the app. The persisted settings are
+    /// kept so the next game starts from the same configuration.
+    private func teardownToIdle() {
+        timer.reset()
+        showRunsEntry = false
+        showGameOver = false
+        showDropDeadConfirm = false
+        hasStarted = false
+        let fresh = persistedSettings
+        game = GameState(settings: fresh)
+        timer = GameTimer(
+            noNewInningsMinutes: fresh.noNewInningsMinutes,
+            ballGameCutoffMinutes: fresh.ballGameCutoffMinutes
+        )
+        selection = 3   // back to Setup
     }
 
     private func endGameManually() {

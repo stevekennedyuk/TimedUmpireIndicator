@@ -16,6 +16,8 @@ struct SettingsView: View {
     @AppStorage("settings_enforceDD")    private var enforceDropDead: Bool = true
     @AppStorage("settings_keepScore")    private var keepScore: Bool = true
     @AppStorage("settings_allowTies")    private var allowTies: Bool = true
+    @AppStorage("settings_autoClose")    private var autoClose: Bool = true
+    @AppStorage("settings_idleTimeout")  private var idleTimeout: Int = 20
     @AppStorage("settings_maxBalls")     private var maxBalls: Int = 4
     @AppStorage("settings_maxStrikes")   private var maxStrikes: Int = 3
     @AppStorage("settings_maxOuts")      private var maxOuts: Int = 3
@@ -80,6 +82,22 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Auto-close") {
+                    Toggle(isOn: $autoClose) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Auto-close when idle")
+                            Text(autoClose
+                                 ? "Once past the cut-off, ends the game and closes the session after a period with no interaction."
+                                 : "The app stays open until the umpire ends the game.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if autoClose {
+                        Stepper("Idle limit: \(idleTimeout) min", value: $idleTimeout, in: 5...60, step: 5)
+                    }
+                }
+
                 Section("Rules") {
                     Stepper("Balls per walk: \(maxBalls)", value: $maxBalls, in: 2...6)
                     Stepper("Strikes per K: \(maxStrikes)", value: $maxStrikes, in: 2...4)
@@ -123,7 +141,9 @@ struct SettingsView: View {
             homeTeamName: homeName,
             enforceDropDead: enforceDropDead,
             keepScore: keepScore,
-            allowTies: allowTies
+            allowTies: allowTies,
+            autoCloseOnInactivity: autoClose,
+            inactivityTimeoutMinutes: idleTimeout
         )
     }
 
