@@ -160,6 +160,9 @@ struct ContentView: View {
                 keepScore: game.settings.keepScore
             ) {
                 showGameOver = false
+                // The game is over and acknowledged — tear down to idle so the
+                // next game starts clean (fresh state, Away/Home names).
+                teardownToIdle()
             }
         }
         .confirmationDialog(

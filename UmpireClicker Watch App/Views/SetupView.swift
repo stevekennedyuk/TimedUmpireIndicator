@@ -146,6 +146,17 @@ struct SetupView: View {
                 loadFromSettings()
             }
         }
+        .onChange(of: hasStarted) { _, started in
+            // After a game ends and the session tears down (hasStarted flips
+            // back to false), re-sync the fields. The settings VALUE may be
+            // unchanged from what was persisted at game start, so the
+            // onChange(of: settings) above won't fire — this one will, and it
+            // is what resets the team-name fields to Away/Home for the next
+            // game.
+            if !started {
+                loadFromSettings()
+            }
+        }
         .confirmationDialog("End the game?", isPresented: $showEndConfirm, titleVisibility: .visible) {
             Button("End Game", role: .destructive, action: onEndManually)
             Button("Cancel", role: .cancel) {}
