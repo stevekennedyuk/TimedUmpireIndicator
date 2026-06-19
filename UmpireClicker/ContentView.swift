@@ -8,10 +8,12 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
+            GameView()
+                .tabItem { Label("Game", systemImage: "baseball") }
             HistoryView()
                 .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
             AboutView()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
@@ -31,7 +33,7 @@ struct AboutView: View {
                           systemImage: session.isWatchAppInstalled ? "checkmark.circle" : "xmark.circle")
                 }
                 Section("How it works") {
-                    Text("This iPhone app is the companion to the Umpire Clicker Watch app. Use the Settings tab to choose defaults (sport, timer thresholds, team names) — they're pushed to the watch automatically. Completed games sync back here for the History tab.")
+                    Text("Umpire from your iPhone on the Game tab, or use the companion Apple Watch app. Settings here set the defaults for new games and are pushed to the watch automatically. Completed games appear under History.")
                         .font(.callout)
                 }
                 Section("Tournament rules") {

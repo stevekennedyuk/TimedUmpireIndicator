@@ -21,8 +21,6 @@ struct SettingsView: View {
     @AppStorage("settings_maxBalls")     private var maxBalls: Int = 4
     @AppStorage("settings_maxStrikes")   private var maxStrikes: Int = 3
     @AppStorage("settings_maxOuts")      private var maxOuts: Int = 3
-    @AppStorage("settings_awayName")     private var awayName: String = "Away"
-    @AppStorage("settings_homeName")     private var homeName: String = "Home"
 
     @State private var lastSentAt: Date?
 
@@ -104,13 +102,6 @@ struct SettingsView: View {
                     Stepper("Outs per half-inning: \(maxOuts)", value: $maxOuts, in: 1...4)
                 }
 
-                Section("Team names") {
-                    TextField("Visiting team", text: $awayName)
-                        .textInputAutocapitalization(.words)
-                    TextField("Home team", text: $homeName)
-                        .textInputAutocapitalization(.words)
-                }
-
                 Section {
                     Button {
                         sync()
@@ -137,8 +128,8 @@ struct SettingsView: View {
             maxBalls: maxBalls,
             maxStrikes: maxStrikes,
             maxOuts: maxOuts,
-            awayTeamName: awayName,
-            homeTeamName: homeName,
+            awayTeamName: "Away",
+            homeTeamName: "Home",
             enforceDropDead: enforceDropDead,
             keepScore: keepScore,
             allowTies: allowTies,

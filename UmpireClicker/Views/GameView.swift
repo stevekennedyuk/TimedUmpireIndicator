@@ -1,0 +1,409 @@
+//
+//  GameView.swift
+//  UmpireClicker (iOS)
+//
+//  The full umpire experience on iPhone / iPad: a single scrollable screen
+//  with the scoreboard, big balls/strikes/outs tap targets, the game clock,
+//  and end-of-game controls — driving the same shared GameState / GameTimer
+//  engine as the watch app. Team names are fixed Away / Home.
+//
+
+import SwiftUI
+
+struct GameView: View {
+    @Environment(HistoryStore.self) private var history
+    @AppStorage("ios_lastSettings") private var storedSettingsData: Data = Data()
+
+    @State private var game = GameState(settings: .default)
+    @State private var timer = GameTimer()
+    @State private var hasStarted = false
+    @State private var showSetup = false
+    @State private var showRunsEntry = false
+    @State private var showGameOver = false
+    @State private var showDropDead = false
+    @State private var showEndConfirm = false
+
+    private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var persistedSettings: GameSettings {
+        (try? JSONDecoder().decode(GameSettings.self, from: storedSettingsData)) ?? .default
+    }
+
+    private func persist(_ s: GameSettings) {
+        if let data = try? JSONEncoder().encode(s) { storedSettingsData = data }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if hasStarted {
+                    activeGame
+                } else {
+                    idleStart
+                }
+            }
+            .navigationTitle("Umpire")
+            .toolbar {
+                if hasStarted {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("End", role: .destructive) { showEndConfirm = true }
+                    }
+                }
+            }
+        }
+        .onReceive(tick) { _ in
+            timer.tick()
+            guard hasStarted, !game.isComplete, !game.pendingRunsEntry else { return }
+            if game.settings.autoCloseOnInactivity
+                && timer.isNoNewInningsTriggered
+                && game.secondsSinceActivity() >= TimeInterval(game.settings.inactivityTimeoutMinutes * 60) {
+                game.endForInactivity(); return
+            }
+            if timer.isCutoffTriggered && !game.dropDeadOverridden && game.settings.enforceDropDead {
+                if !showDropDead { showDropDead = true }
+                return
+            }
+            if game.settings.keepScore && timer.isNoNewInningsTriggered && game.leader == .home {
+                game.endForNoNewInningsHomeLeads()
+            }
+        }
+        .onChange(of: game.pendingRunsEntry) { _, pending in
+            if pending { showRunsEntry = true }
+        }
+        .onChange(of: game.isComplete) { _, ended in
+            guard ended else { return }
+            timer.pause()
+            showRunsEntry = false
+            if game.settings.keepScore {
+                history.add(game.buildRecord(durationSeconds: timer.elapsed))
+            }
+            if game.endReason == .inactivity {
+                teardownToIdle()
+            } else {
+                showGameOver = true
+            }
+        }
+        .sheet(isPresented: $showSetup) {
+            GameSetupSheet(settings: persistedSettings) { s in
+                showSetup = false
+                startGame(with: s)
+            } onCancel: {
+                showSetup = false
+            }
+        }
+        .sheet(isPresented: $showRunsEntry) {
+            RunsEntrySheet(
+                inning: game.inning,
+                half: game.half,
+                teamBatting: game.half == .top ? "Away" : "Home"
+            ) { runs in
+                game.confirmRunsForCompletedHalf(
+                    runs,
+                    noNewInningsTriggered: timer.isNoNewInningsTriggered,
+                    cutoffTriggered: timer.isCutoffTriggered
+                )
+                showRunsEntry = false
+            }
+        }
+        .sheet(isPresented: $showGameOver) {
+            GameOverSheet(game: game, elapsed: timer.elapsed) {
+                showGameOver = false
+                teardownToIdle()
+            }
+        }
+        .confirmationDialog("End the game?", isPresented: $showEndConfirm, titleVisibility: .visible) {
+            Button("End game", role: .destructive) { game.endManually() }
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog(dropDeadTitle, isPresented: $showDropDead, titleVisibility: .visible) {
+            dropDeadButtons
+            Button("Play on") { game.registerActivity(); game.dropDeadOverridden = true }
+        } message: {
+            Text(dropDeadMessage)
+        }
+    }
+
+    // MARK: - Idle / start
+
+    private var idleStart: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "baseball")
+                .font(.system(size: 64))
+                .foregroundStyle(.tint)
+            Text("Ready to umpire")
+                .font(.title2.bold())
+            Text("Start a game to track balls, strikes, outs, innings and the tournament clock.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Button {
+                showSetup = true
+            } label: {
+                Label("Start game", systemImage: "play.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.horizontal, 32)
+        }
+    }
+
+    // MARK: - Active game (single scrollable screen)
+
+    private var activeGame: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                if game.settings.keepScore {
+                    scoreboard
+                } else {
+                    inningOnly
+                }
+                countRow
+                clockCard
+                if game.settings.keepScore {
+                    Button {
+                        game.forceEndOfHalf()
+                    } label: {
+                        Label("End half-inning", systemImage: "forward.end.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding()
+        }
+    }
+
+    private var scoreboard: some View {
+        HStack(spacing: 12) {
+            teamScore(name: "Away", score: game.awayScore, batting: game.half == .top)
+            VStack(spacing: 2) {
+                Text(game.half == .top ? "▲" : "▼")
+                    .font(.title3)
+                    .foregroundStyle(game.half == .top ? .green : .blue)
+                Text("Inning \(game.inning)")
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity)
+            teamScore(name: "Home", score: game.homeScore, batting: game.half == .bottom)
+        }
+        .padding()
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func teamScore(name: String, score: Int, batting: Bool) -> some View {
+        VStack(spacing: 4) {
+            Text(name)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(batting ? .primary : .secondary)
+            Text("\(score)")
+                .font(.system(size: 52, weight: .bold, design: .rounded))
+                .monospacedDigit()
+            if batting {
+                Text("AT BAT")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.tint)
+            } else {
+                Text(" ")
+                    .font(.caption2)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var inningOnly: some View {
+        VStack(spacing: 2) {
+            Text(game.half == .top ? "▲ Top" : "▼ Bottom")
+                .font(.headline)
+            Text("Inning \(game.inning)")
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var countRow: some View {
+        HStack(spacing: 12) {
+            BigCountCell(label: "BALLS", value: game.balls,
+                         pips: max(1, game.settings.maxBalls - 1), color: .green,
+                         increment: { game.incrementBall() },
+                         decrement: { game.decrementBall() })
+            BigCountCell(label: "STRIKES", value: game.strikes,
+                         pips: max(1, game.settings.maxStrikes - 1), color: .yellow,
+                         increment: { game.incrementStrike() },
+                         decrement: { game.decrementStrike() })
+            BigCountCell(label: "OUTS", value: game.outs,
+                         pips: max(1, game.settings.maxOuts - 1), color: .red,
+                         increment: { game.incrementOut() },
+                         decrement: { game.decrementOut() })
+        }
+    }
+
+    private var clockCard: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: clockIcon)
+                    .foregroundStyle(clockColor)
+                Text(timer.isPaused ? "Paused" : timer.phase.rawValue)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(timer.isPaused ? .yellow : clockColor)
+                Spacer()
+                Text(timer.activeCountdownText)
+                    .font(.system(.title2, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(timer.isPaused ? .yellow : clockColor)
+            }
+            HStack {
+                Text("Elapsed \(GameTimer.format(timer.elapsed))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    if timer.isPaused { timer.resume() } else { timer.pause() }
+                } label: {
+                    Label(timer.isPaused ? "Resume" : "Pause",
+                          systemImage: timer.isPaused ? "play.fill" : "pause.fill")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(timer.startedAt == nil)
+            }
+        }
+        .padding()
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var clockIcon: String {
+        switch timer.phase {
+        case .noNew: return "timer"
+        case .ballGame: return "exclamationmark.triangle.fill"
+        case .overtime: return "stop.circle.fill"
+        }
+    }
+
+    private var clockColor: Color {
+        switch timer.phase {
+        case .noNew: return .secondary
+        case .ballGame: return .orange
+        case .overtime: return .red
+        }
+    }
+
+    // MARK: - Drop-dead dialog
+
+    private var dropDeadTitle: String { "Cut-off reached" }
+
+    private var dropDeadMessage: String {
+        let elapsed = GameTimer.format(timer.elapsed)
+        guard game.settings.keepScore else {
+            return "\(elapsed) elapsed. End the game or keep playing?"
+        }
+        if game.homeWinsOnCutoff {
+            return "\(elapsed) elapsed. Home lead while batting — the score stands."
+        }
+        return "\(elapsed) elapsed. The current inning is incomplete, so the score reverts to the last completed inning."
+    }
+
+    @ViewBuilder
+    private var dropDeadButtons: some View {
+        if !game.settings.keepScore {
+            Button("End game", role: .destructive) { game.endAtDropDead() }
+        } else if game.homeWinsOnCutoff {
+            Button("End — Home win", role: .destructive) { game.endAtDropDead() }
+        } else {
+            let preferred = game.dropDeadPreview(allowTies: game.settings.allowTies)
+            Button(label(preferred, "End"), role: .destructive) {
+                game.endAtDropDead(allowTiesOverride: game.settings.allowTies)
+            }
+            let alt = game.dropDeadPreview(allowTies: !game.settings.allowTies)
+            if alt.away != preferred.away || alt.home != preferred.home {
+                Button(label(alt, game.settings.allowTies ? "No tie —" : "Allow tie —")) {
+                    game.endAtDropDead(allowTiesOverride: !game.settings.allowTies)
+                }
+            }
+        }
+    }
+
+    private func label(_ p: (away: Int, home: Int, inning: Int?, tied: Bool), _ prefix: String) -> String {
+        let score = "Away \(p.away)–\(p.home) Home"
+        if let inn = p.inning { return "\(prefix) \(score) (end \(inn))" }
+        return "\(prefix) \(score)"
+    }
+
+    // MARK: - Lifecycle
+
+    private func startGame(with settings: GameSettings) {
+        var carried = settings
+        carried.awayTeamName = "Away"
+        carried.homeTeamName = "Home"
+        persist(carried)
+        game = GameState(settings: carried)
+        timer = GameTimer(
+            noNewInningsMinutes: carried.noNewInningsMinutes,
+            ballGameCutoffMinutes: carried.ballGameCutoffMinutes
+        )
+        timer.start()
+        hasStarted = true
+    }
+
+    private func teardownToIdle() {
+        timer.reset()
+        showRunsEntry = false
+        showGameOver = false
+        showDropDead = false
+        hasStarted = false
+        let fresh = persistedSettings
+        game = GameState(settings: fresh)
+        timer = GameTimer(
+            noNewInningsMinutes: fresh.noNewInningsMinutes,
+            ballGameCutoffMinutes: fresh.ballGameCutoffMinutes
+        )
+    }
+}
+
+// MARK: - Big tap target for iOS
+
+struct BigCountCell: View {
+    let label: String
+    let value: Int
+    let pips: Int
+    let color: Color
+    let increment: () -> Void
+    let decrement: () -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(color)
+            Text("\(value)")
+                .font(.system(size: 56, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+            HStack(spacing: 4) {
+                ForEach(0..<pips, id: \.self) { i in
+                    Circle()
+                        .fill(i < value ? color : color.opacity(0.25))
+                        .frame(width: 8, height: 8)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .onTapGesture { increment() }
+        .onLongPressGesture(minimumDuration: 0.4) { decrement() }
+        .accessibilityElement()
+        .accessibilityLabel("\(label): \(value)")
+        .accessibilityHint("Tap to add, long-press to subtract")
+    }
+}
+
+#Preview {
+    GameView()
+        .environment(HistoryStore.preview)
+}
