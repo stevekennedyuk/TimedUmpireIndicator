@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
-Generate App Store Connect marketing screenshots for UmpireClicker at the
-exact required pixel dimensions:
+App Store screenshots for UmpireClicker v1.4+ — the iOS app is now a full
+umpire tool, so the iPhone/iPad shots lead with the live Game screen.
 
+Sizes:
     iPhone 6.5"      1242 x 2688
     iPad 13"         2064 x 2752
     Apple Watch       422 x  514
 
-Output is opaque RGB PNG (no alpha), written next to this script in
-./screenshots/. Requires Pillow (the same dependency icon-source/make_icon.py
-uses):  pip3 install pillow
-
-Fonts resolve automatically: Arial/Helvetica on macOS, DejaVu on Linux.
+Opaque RGB PNGs, written to ./screenshots/ next to this script.
+Requires Pillow. Fonts: Arial/Helvetica on macOS, DejaVu on Linux.
 """
 
 import os
@@ -22,25 +20,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUTDIR = os.path.join(HERE, "screenshots")
 os.makedirs(OUTDIR, exist_ok=True)
 
-# ---------- palette (matches the app icon) ----------
 NAVY_TOP    = (16, 28, 56)
 NAVY_BOTTOM = (8, 18, 38)
 CARD_TOP    = (20, 34, 66)
 CARD_BOT    = (12, 22, 44)
+ROW_BG      = (26, 42, 78)
 IVORY       = (244, 245, 240)
-DIAL_SHADE  = (214, 216, 209)
-NUMBER      = (24, 32, 54)
 LABEL_GREY  = (150, 165, 195)
 DIM_GREY    = (120, 135, 165)
-CHROME      = (212, 220, 232)
-RIM_INNER   = (60, 78, 108)
-RED         = (198, 56, 46)
-RED_DARK    = (120, 30, 25)
 GREEN       = (74, 190, 120)
+YELLOW      = (235, 200, 80)
+RED         = (225, 90, 80)
 AMBER       = (230, 170, 60)
+BLUE        = (100, 150, 235)
 WHITE       = (248, 250, 252)
 
-# ---------- cross-platform font resolution ----------
 _BOLD_CANDIDATES = [
     ("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 0),
     ("/Library/Fonts/Arial Bold.ttf", 0),
@@ -58,7 +52,7 @@ def _resolve(cands):
     for path, idx in cands:
         if os.path.exists(path):
             return path, idx
-    raise RuntimeError("No suitable system font found; install Arial or DejaVu.")
+    raise RuntimeError("No suitable font found; install Arial or DejaVu.")
 
 _BOLD = _resolve(_BOLD_CANDIDATES)
 _REG  = _resolve(_REG_CANDIDATES)
@@ -67,15 +61,14 @@ def font(bold, size):
     path, idx = _BOLD if bold else _REG
     return ImageFont.truetype(path, size, index=idx)
 
-# ---------- drawing helpers ----------
 def vgrad(draw, x0, y0, x1, y1, c_top, c_bot):
     h = y1 - y0
     for i in range(h):
         t = i / max(1, h - 1)
-        r = int(c_top[0]*(1-t) + c_bot[0]*t)
-        g = int(c_top[1]*(1-t) + c_bot[1]*t)
-        b = int(c_top[2]*(1-t) + c_bot[2]*t)
-        draw.line([(x0, y0+i), (x1, y0+i)], fill=(r, g, b))
+        draw.line([(x0, y0 + i), (x1, y0 + i)], fill=(
+            int(c_top[0]*(1-t) + c_bot[0]*t),
+            int(c_top[1]*(1-t) + c_bot[1]*t),
+            int(c_top[2]*(1-t) + c_bot[2]*t)))
 
 def ctext(draw, cx, y, text, fnt, fill, spacing=0):
     if spacing:
@@ -86,8 +79,7 @@ def ctext(draw, cx, y, text, fnt, fill, spacing=0):
             draw.text((x, y), ch, font=fnt, fill=fill)
             x += w + spacing
         return
-    w = draw.textlength(text, font=fnt)
-    draw.text((cx - w/2, y), text, font=fnt, fill=fill)
+    draw.text((cx - draw.textlength(text, font=fnt)/2, y), text, font=fnt, fill=fill)
 
 def ltext(draw, x, y, text, fnt, fill):
     draw.text((x, y), text, font=fnt, fill=fill)
@@ -95,213 +87,253 @@ def ltext(draw, x, y, text, fnt, fill):
 def rounded(draw, box, radius, **kw):
     draw.rounded_rectangle(box, radius=radius, **kw)
 
-def draw_count_cell(img, draw, cx, cy, r, label, value, active_pin=True):
-    draw.ellipse([cx-r-int(r*0.07), cy-r-int(r*0.07), cx+r+int(r*0.07), cy+r+int(r*0.07)],
-                 outline=CHROME, width=max(2, r//22))
-    draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=IVORY, outline=RIM_INNER, width=max(2, r//30))
-    shade = Image.new("RGBA", (2*r, 2*r), (0,0,0,0))
-    sd = ImageDraw.Draw(shade)
-    sd.ellipse([0, int(r*0.9), 2*r, 2*r], fill=(*DIAL_SHADE, 80))
-    img.paste(shade, (cx-r, cy-r), shade)
-    for ang in (90, 0, 270, 180):
-        a = math.radians(ang)
-        x1 = cx + (r-int(r*0.10))*math.cos(a); y1 = cy - (r-int(r*0.10))*math.sin(a)
-        x2 = cx + (r-int(r*0.21))*math.cos(a); y2 = cy - (r-int(r*0.21))*math.sin(a)
-        draw.line([(x1,y1),(x2,y2)], fill=RIM_INNER, width=max(2, r//40))
-    lf = font(True, int(r*0.26))
-    ctext(draw, cx, cy - int(r*0.62), label, lf, LABEL_GREY, spacing=int(r*0.02))
-    nf = font(True, int(r*1.15))
-    bb = draw.textbbox((0,0), value, font=nf)
-    nh = bb[3]-bb[1]
-    draw.text((cx - draw.textlength(value, font=nf)/2, cy - nh/2 - bb[1] + int(r*0.12)),
-              value, font=nf, fill=NUMBER)
-    if active_pin:
-        pr = max(2, int(r*0.08))
-        py = cy - r + int(r*0.12)
-        draw.ellipse([cx-pr, py-pr, cx+pr, py+pr], fill=RED, outline=RED_DARK, width=1)
-
-# ---------------------------------------------------------------- WATCH 422x514
-def make_watch():
-    W, H = 422, 514
-    img = Image.new("RGB", (W, H), NAVY_BOTTOM)
-    d = ImageDraw.Draw(img)
-    vgrad(d, 0, 0, W, H, NAVY_TOP, NAVY_BOTTOM)
-
-    away_x, home_x = 92, W-92
-    ctext(d, away_x, 16, "AWAY", font(True, 22), LABEL_GREY, spacing=1)
-    ctext(d, home_x, 16, "HOME", font(True, 22), LABEL_GREY, spacing=1)
-    ctext(d, away_x, 40, "3", font(True, 74), WHITE)
-    ctext(d, home_x, 40, "5", font(True, 74), WHITE)
-    pill_w, pill_h = 78, 46
-    px0 = W//2 - pill_w//2; py0 = 52
-    rounded(d, [px0, py0, px0+pill_w, py0+pill_h], 12, fill=(34, 50, 86))
-    ctext(d, W//2, py0+4, "\u25B2", font(True, 18), GREEN)
-    ctext(d, W//2, py0+20, "4", font(True, 22), WHITE)
-
-    r = 58
-    cy = 232
-    xs = [92, W//2, W-92]
-    for x, lab, val in zip(xs, ["BALLS","STRIKES","OUTS"], ["2","1","2"]):
-        draw_count_cell(img, d, x, cy, r, lab, val)
-    d = ImageDraw.Draw(img)
-
-    tw, th = 250, 84
-    tx0 = W//2 - tw//2; ty0 = 392
-    rounded(d, [tx0, ty0, tx0+tw, ty0+th], 20, fill=(22, 36, 68), outline=AMBER, width=3)
-    ccx, ccy, cr = tx0+44, ty0+th//2, 22
-    d.ellipse([ccx-cr, ccy-cr, ccx+cr, ccy+cr], outline=AMBER, width=4)
-    d.line([(ccx, ccy), (ccx, ccy-12)], fill=AMBER, width=4)
-    d.line([(ccx, ccy), (ccx+9, ccy+4)], fill=AMBER, width=4)
-    ltext(d, tx0+82, ty0+18, "47:12", font(True, 50), WHITE)
-
-    img.save(os.path.join(OUTDIR, "watch_422x514.png"))
-
-# ---------------------------------------------------------------- iOS history card
-def draw_ios_history(img, d, x0, y0, x1, y1, scale=1.0):
-    rad = int(46*scale)
-    rounded(d, [x0, y0, x1, y1], rad, fill=CARD_TOP)
+def card(img, box, radius):
+    x0, y0, x1, y1 = box
     inner = Image.new("RGB", (x1-x0, y1-y0), CARD_TOP)
-    id_ = ImageDraw.Draw(inner)
-    vgrad(id_, 0, 0, x1-x0, y1-y0, CARD_TOP, CARD_BOT)
+    vgrad(ImageDraw.Draw(inner), 0, 0, x1-x0, y1-y0, CARD_TOP, CARD_BOT)
     mask = Image.new("L", (x1-x0, y1-y0), 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0,0,x1-x0-1,y1-y0-1], radius=rad, fill=255)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, x1-x0-1, y1-y0-1], radius=radius, fill=255)
     img.paste(inner, (x0, y0), mask)
-    d = ImageDraw.Draw(img)
+    return ImageDraw.Draw(img)
 
-    padx = int(48*scale)
-    ltext(d, x0+padx, y0+int(40*scale), "History", font(True, int(58*scale)), WHITE)
-    ltext(d, x0+padx, y0+int(112*scale), "12 games called", font(False, int(26*scale)), DIM_GREY)
+# ------------------------------------------------------------ Game screen card
+def draw_game_screen(img, d, x0, y0, x1, s=1.0):
+    """Render the iOS Game screen (scoreboard, count cells, clock).
+    The card is sized to its content; returns the card bottom y."""
+    content_h = int(1040*s) + int(44*s)   # sections + bottom padding
+    y1 = y0 + content_h
+    d = card(img, (x0, y0, x1, y1), int(46*s))
+    pad = int(44*s)
 
-    rows = [
-        ("Eagles", 7, "Hawks", 5, "Sun 24 May", "1h 02m", "Final", GREEN),
-        ("Tigers", 4, "Bears", 4, "Sat 23 May", "0h 58m", "Time", AMBER),
-        ("Sox", 9, "Jays", 2, "Wed 20 May", "0h 47m", "Run rule", RED),
-        ("Cubs", 3, "Reds", 6, "Sun 17 May", "1h 05m", "Final", GREEN),
-        ("Aces", 5, "Kings", 1, "Sat 16 May", "0h 51m", "Time", AMBER),
-        ("Owls", 2, "Larks", 8, "Wed 13 May", "0h 44m", "Run rule", RED),
-        ("Foxes", 6, "Wolves", 3, "Sun 10 May", "1h 09m", "Final", GREEN),
-        ("Rams", 1, "Colts", 2, "Sat 09 May", "0h 55m", "Final", GREEN),
-        ("Jets", 8, "Stars", 0, "Wed 06 May", "0h 41m", "Run rule", RED),
-        ("Bolts", 3, "Gulls", 3, "Sun 03 May", "1h 00m", "Time", AMBER),
-        ("Pumas", 5, "Lynx", 4, "Sat 02 May", "1h 03m", "Final", GREEN),
-        ("Crabs", 2, "Seals", 7, "Wed 29 Apr", "0h 49m", "Run rule", RED),
-    ]
-    ry = y0 + int(168*scale)
-    rh = int(132*scale)
-    for (a, asc, h, hsc, date, dur, reason, col) in rows:
-        if ry + rh > y1 - int(20*scale):
-            break
-        rounded(d, [x0+int(28*scale), ry, x1-int(28*scale), ry+rh-int(18*scale)],
-                int(20*scale), fill=(26, 42, 78))
-        rounded(d, [x0+int(28*scale), ry, x0+int(40*scale), ry+rh-int(18*scale)],
-                int(6*scale), fill=col)
-        score = f"{a} {asc} \u2013 {hsc} {h}"
-        ltext(d, x0+int(64*scale), ry+int(20*scale), score, font(True, int(40*scale)), WHITE)
-        ltext(d, x0+int(64*scale), ry+int(72*scale), f"{date}  \u00B7  {dur}",
-              font(False, int(26*scale)), DIM_GREY)
-        bw = d.textlength(reason, font=font(True, int(24*scale))) + int(56*scale)
-        bx1 = x1-int(48*scale); bx0 = int(bx1-bw)
-        rounded(d, [bx0, ry+int(30*scale), bx1, ry+int(74*scale)], int(22*scale),
-                fill=(col[0]//4+18, col[1]//4+18, col[2]//4+18), outline=col, width=max(1,int(2*scale)))
-        ctext(d, (bx0+bx1)//2, ry+int(36*scale), reason, font(True, int(24*scale)), col)
-        ry += rh
+    # nav title
+    ltext(d, x0+pad, y0+int(34*s), "Umpire", font(True, int(56*s)), WHITE)
+    end_f = font(True, int(30*s))
+    d.text((x1-pad-d.textlength("End", font=end_f), y0+int(52*s)), "End", font=end_f, fill=RED)
 
-# ---------------------------------------------------------------- iPhone 1242x2688
+    # ---- scoreboard card ----
+    sb_y0 = y0 + int(126*s); sb_y1 = sb_y0 + int(240*s)
+    rounded(d, [x0+pad, sb_y0, x1-pad, sb_y1], int(26*s), fill=ROW_BG)
+    third = (x1 - x0 - 2*pad) // 3
+    away_cx = x0 + pad + third//2
+    mid_cx  = x0 + pad + third + third//2
+    home_cx = x0 + pad + 2*third + third//2
+    ctext(d, away_cx, sb_y0+int(24*s), "Away", font(True, int(34*s)), WHITE)
+    ctext(d, away_cx, sb_y0+int(66*s), "3", font(True, int(110*s)), WHITE)
+    ctext(d, away_cx, sb_y0+int(190*s), "AT BAT", font(True, int(24*s)), GREEN, spacing=int(2*s))
+    ctext(d, mid_cx, sb_y0+int(46*s), "\u25B2", font(True, int(44*s)), GREEN)
+    ctext(d, mid_cx, sb_y0+int(110*s), "Inning 5", font(True, int(36*s)), WHITE)
+    ctext(d, home_cx, sb_y0+int(24*s), "Home", font(False, int(34*s)), DIM_GREY)
+    ctext(d, home_cx, sb_y0+int(66*s), "2", font(True, int(110*s)), DIM_GREY)
+
+    # ---- count cells ----
+    cc_y0 = sb_y1 + int(34*s); cc_h = int(300*s)
+    gap = int(24*s)
+    cw = (x1 - x0 - 2*pad - 2*gap) // 3
+    cells = [("BALLS", "2", GREEN, 3), ("STRIKES", "1", YELLOW, 2), ("OUTS", "2", RED, 2)]
+    for i, (lab, val, col, pips) in enumerate(cells):
+        cx0 = x0 + pad + i*(cw+gap)
+        tint = (col[0]//5+16, col[1]//5+16, col[2]//5+16)
+        rounded(d, [cx0, cc_y0, cx0+cw, cc_y0+cc_h], int(24*s), fill=tint)
+        ctext(d, cx0+cw//2, cc_y0+int(26*s), lab, font(True, int(30*s)), col, spacing=int(2*s))
+        ctext(d, cx0+cw//2, cc_y0+int(68*s), val, font(True, int(150*s)), WHITE)
+        pr = int(11*s); total_w = pips*2*pr + (pips-1)*int(12*s)
+        px = cx0 + cw//2 - total_w//2 + pr
+        for p in range(pips):
+            filled = p < int(val)
+            d.ellipse([px-pr, cc_y0+cc_h-int(46*s)-pr, px+pr, cc_y0+cc_h-int(46*s)+pr],
+                      fill=col if filled else (col[0]//3, col[1]//3, col[2]//3))
+            px += 2*pr + int(12*s)
+
+    # ---- clock card ----
+    ck_y0 = cc_y0 + cc_h + int(34*s); ck_y1 = ck_y0 + int(180*s)
+    rounded(d, [x0+pad, ck_y0, x1-pad, ck_y1], int(26*s), fill=ROW_BG)
+    ccx, ccy, crr = x0+pad+int(52*s), ck_y0+int(52*s), int(22*s)
+    d.ellipse([ccx-crr, ccy-crr, ccx+crr, ccy+crr], outline=AMBER, width=max(2, int(4*s)))
+    d.line([(ccx, ccy), (ccx, ccy-int(12*s))], fill=AMBER, width=max(2, int(4*s)))
+    d.line([(ccx, ccy), (ccx+int(9*s), ccy+int(4*s))], fill=AMBER, width=max(2, int(4*s)))
+    ltext(d, ccx+crr+int(16*s), ck_y0+int(28*s), "Ball Game", font(True, int(38*s)), AMBER)
+    t_f = font(True, int(64*s))
+    d.text((x1-pad-int(30*s)-d.textlength("07:41", font=t_f), ck_y0+int(18*s)), "07:41", font=t_f, fill=AMBER)
+    ltext(d, x0+pad+int(30*s), ck_y0+int(112*s), "Elapsed 52:19", font(False, int(30*s)), DIM_GREY)
+    btn_f = font(True, int(30*s))
+    bw = d.textlength("Pause", font=btn_f) + int(56*s)
+    rounded(d, [x1-pad-int(30*s)-bw, ck_y0+int(102*s), x1-pad-int(30*s), ck_y0+int(156*s)],
+            int(16*s), outline=BLUE, width=max(2, int(3*s)))
+    ctext(d, x1-pad-int(30*s)-bw//2, ck_y0+int(112*s), "Pause", btn_f, BLUE)
+
+    # ---- end-half button ----
+    eh_y0 = ck_y1 + int(30*s); eh_y1 = eh_y0 + int(96*s)
+    rounded(d, [x0+pad, eh_y0, x1-pad, eh_y1], int(22*s), outline=BLUE, width=max(2, int(3*s)))
+    ctext(d, (x0+x1)//2, eh_y0+int(24*s), "End half-inning", font(True, int(36*s)), BLUE)
+    return y1
+
+# ------------------------------------------------------------ iPhone
 def make_iphone():
     W, H = 1242, 2688
     img = Image.new("RGB", (W, H), NAVY_BOTTOM)
     d = ImageDraw.Draw(img)
     vgrad(d, 0, 0, W, H, NAVY_TOP, NAVY_BOTTOM)
-    ctext(d, W//2, 150, "Every Call. On the Clock.", font(True, 82), WHITE)
-    ctext(d, W//2, 270, "Balls \u00B7 Strikes \u00B7 Outs \u00B7 Innings \u00B7 Game timer",
+
+    ctext(d, W//2, 130, "Umpire From Your Phone.", font(True, 84), WHITE)
+    ctext(d, W//2, 250, "Balls \u00B7 Strikes \u00B7 Outs \u00B7 Innings \u00B7 Tournament clock",
           font(False, 42), LABEL_GREY)
-    draw_ios_history(img, d, 121, 430, 1121, 2360, scale=1.0)
+
+    card_bottom = draw_game_screen(img, d, 121, 400, 1121, s=1.35)
     d = ImageDraw.Draw(img)
-    ctext(d, W//2, 2470, "Designed for softball & baseball umpires",
-          font(False, 40), DIM_GREY)
+
+    # feature strip fills the space under the game card
+    feats = [("alert", "Haptic alerts", "Buzzes at both\ntimer thresholds"),
+             ("sun", "Stays awake", "Screen never sleeps\nduring a game"),
+             ("list", "Auto history", "Every game saved\nwith line score")]
+    fy0 = card_bottom + 70; fh = 300
+    gap = 30; fw = (1000 - 2*gap)//3
+    for i, (icon, title, sub) in enumerate(feats):
+        fx0 = 121 + i*(fw+gap)
+        rounded(d, [fx0, fy0, fx0+fw, fy0+fh], 24, fill=ROW_BG)
+        icx, icy = fx0+fw//2, fy0+62
+        if icon == "alert":
+            # bell-ish: circle with "!" plus two vibration arcs
+            d.ellipse([icx-26, icy-26, icx+26, icy+26], outline=AMBER, width=4)
+            ctext(d, icx, icy-22, "!", font(True, 40), AMBER)
+            d.arc([icx-44, icy-44, icx+44, icy+44], 300, 340, fill=AMBER, width=4)
+            d.arc([icx-44, icy-44, icx+44, icy+44], 200, 240, fill=AMBER, width=4)
+        elif icon == "sun":
+            d.ellipse([icx-18, icy-18, icx+18, icy+18], outline=AMBER, width=4)
+            import math as _m
+            for a in range(0, 360, 45):
+                r = _m.radians(a)
+                d.line([(icx+26*_m.cos(r), icy+26*_m.sin(r)),
+                        (icx+38*_m.cos(r), icy+38*_m.sin(r))], fill=AMBER, width=4)
+        else:  # list
+            for j in range(3):
+                yy = icy - 20 + j*20
+                d.ellipse([icx-34, yy-4, icx-26, yy+4], fill=AMBER)
+                d.line([(icx-16, yy), (icx+36, yy)], fill=AMBER, width=5)
+        ctext(d, fx0+fw//2, fy0+122, title, font(True, 38), WHITE)
+        for j, line in enumerate(sub.split("\n")):
+            ctext(d, fx0+fw//2, fy0+180+j*40, line, font(False, 28), DIM_GREY)
+
+    ctext(d, W//2, fy0+fh+70, "Also on Apple Watch", font(True, 38), LABEL_GREY)
     img.save(os.path.join(OUTDIR, "iphone_1242x2688.png"))
 
-# ---------------------------------------------------------------- iPad 2064x2752
-def draw_linescore_panel(img, d, x0, y0, x1, y1):
-    rad = 50
-    rounded(d, [x0, y0, x1, y1], rad, fill=CARD_TOP)
-    inner = Image.new("RGB", (x1-x0, y1-y0), CARD_TOP)
-    vgrad(ImageDraw.Draw(inner), 0, 0, x1-x0, y1-y0, CARD_TOP, CARD_BOT)
-    mask = Image.new("L", (x1-x0, y1-y0), 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0,0,x1-x0-1,y1-y0-1], radius=rad, fill=255)
-    img.paste(inner, (x0, y0), mask)
-    d = ImageDraw.Draw(img)
-
-    padx = 70
-    ltext(d, x0+padx, y0+50, "Eagles 7 \u2013 5 Hawks", font(True, 70), WHITE)
-    ltext(d, x0+padx, y0+150, "Final \u00B7 7 innings \u00B7 1h 02m", font(False, 38), DIM_GREY)
-
-    innings = list(range(1, 8))
-    away = [0,2,0,1,3,1,0]; home = [1,0,2,0,0,2,0]
-    gx0 = x0+padx; gy0 = y0+260
-    label_col = 130
-    grid_x0 = gx0 + label_col
-    cellw = (x1-padx - grid_x0) // (len(innings)+1)
-    cellh = 92
-    headf = font(True, 34); cellf = font(True, 40); namef = font(True, 38)
-
-    for i, inn in enumerate(innings):
-        ctext(d, grid_x0 + i*cellw + cellw//2, gy0+24, str(inn), headf, DIM_GREY)
-    ctext(d, grid_x0 + len(innings)*cellw + cellw//2, gy0+24, "R", font(True,34), AMBER)
-
-    def row(ry, name, vals, total, col):
-        ltext(d, gx0+8, ry+20, name, namef, WHITE)
-        for i, v in enumerate(vals):
-            ctext(d, grid_x0 + i*cellw + cellw//2, ry+20, str(v), cellf,
-                  WHITE if v else DIM_GREY)
-        ctext(d, grid_x0 + len(vals)*cellw + cellw//2, ry+20, str(total), cellf, col)
-
-    row(gy0+cellh, "AWY", away, sum(away), GREEN)
-    d.line([(gx0, gy0+2*cellh+6), (x1-padx, gy0+2*cellh+6)], fill=(40,56,92), width=2)
-    row(gy0+2*cellh+12, "HOM", home, sum(home), WHITE)
-
-    chip_y = gy0+3*cellh+60
-    rounded(d, [gx0, chip_y, gx0+360, chip_y+76], 24, fill=(20,60,40), outline=GREEN, width=3)
-    ctext(d, gx0+180, chip_y+16, "Eagles win", font(True, 40), GREEN)
-
-    motif_y = chip_y + 230
-    ltext(d, gx0, motif_y - 86, "Final count on the wrist", font(True, 40), WHITE)
-    cr = 96
-    spacing = (x1 - padx - gx0 - 2*cr) // 2
-    centres = [gx0+cr, gx0+cr+spacing, gx0+cr+2*spacing]
-    for cxc, lab, val in zip(centres, ["BALLS","STRIKES","OUTS"], ["3","2","3"]):
-        draw_count_cell(img, d, cxc, motif_y+cr, cr, lab, val)
-    d = ImageDraw.Draw(img)
-    ltext(d, gx0, motif_y + 2*cr + 40,
-          "Counts, outs and innings sync automatically.",
-          font(False, 32), DIM_GREY)
+# ------------------------------------------------------------ iPad
+def draw_history_panel(img, d, x0, y0, x1, y1, s=1.0):
+    d = card(img, (x0, y0, x1, y1), int(46*s))
+    pad = int(44*s)
+    ltext(d, x0+pad, y0+int(36*s), "History", font(True, int(52*s)), WHITE)
+    ltext(d, x0+pad, y0+int(102*s), "12 games called", font(False, int(26*s)), DIM_GREY)
+    rows = [
+        ("Away 7 \u2013 5 Home", "Sun 24 May \u00B7 1h 02m", "Final", GREEN),
+        ("Away 4 \u2013 4 Home", "Sat 23 May \u00B7 0h 58m", "Time", AMBER),
+        ("Away 9 \u2013 2 Home", "Wed 20 May \u00B7 0h 47m", "Run rule", RED),
+        ("Away 3 \u2013 6 Home", "Sun 17 May \u00B7 1h 05m", "Final", GREEN),
+        ("Away 5 \u2013 1 Home", "Sat 16 May \u00B7 0h 51m", "Time", AMBER),
+        ("Away 2 \u2013 8 Home", "Wed 13 May \u00B7 0h 44m", "Run rule", RED),
+        ("Away 6 \u2013 3 Home", "Sun 10 May \u00B7 1h 09m", "Final", GREEN),
+        ("Away 1 \u2013 2 Home", "Sat 09 May \u00B7 0h 55m", "Final", GREEN),
+        ("Away 8 \u2013 0 Home", "Wed 06 May \u00B7 0h 41m", "Run rule", RED),
+        ("Away 3 \u2013 3 Home", "Sun 03 May \u00B7 1h 00m", "Time", AMBER),
+        ("Away 5 \u2013 4 Home", "Sat 02 May \u00B7 1h 03m", "Final", GREEN),
+    ]
+    ry = y0 + int(160*s); rh = int(128*s)
+    for (score, meta, reason, col) in rows:
+        if ry + rh > y1 - int(20*s): break
+        rounded(d, [x0+int(28*s), ry, x1-int(28*s), ry+rh-int(18*s)], int(20*s), fill=ROW_BG)
+        rounded(d, [x0+int(28*s), ry, x0+int(40*s), ry+rh-int(18*s)], int(6*s), fill=col)
+        ltext(d, x0+int(62*s), ry+int(18*s), score, font(True, int(38*s)), WHITE)
+        ltext(d, x0+int(62*s), ry+int(70*s), meta, font(False, int(25*s)), DIM_GREY)
+        bf = font(True, int(23*s)); bw = d.textlength(reason, font=bf) + int(52*s)
+        bx1 = x1-int(46*s); bx0 = int(bx1-bw)
+        rounded(d, [bx0, ry+int(28*s), bx1, ry+int(72*s)], int(22*s),
+                fill=(col[0]//4+18, col[1]//4+18, col[2]//4+18), outline=col, width=max(1, int(2*s)))
+        ctext(d, (bx0+bx1)//2, ry+int(34*s), reason, bf, col)
+        ry += rh
 
 def make_ipad():
     W, H = 2064, 2752
     img = Image.new("RGB", (W, H), NAVY_BOTTOM)
     d = ImageDraw.Draw(img)
     vgrad(d, 0, 0, W, H, NAVY_TOP, NAVY_BOTTOM)
-    ctext(d, W//2, 150, "The Complete Umpire Indicator", font(True, 104), WHITE)
-    ctext(d, W//2, 300, "Track the count and the clock on Apple Watch \u2014 review every game on iPad.",
+
+    ctext(d, W//2, 140, "The Complete Umpire Toolkit", font(True, 100), WHITE)
+    ctext(d, W//2, 285, "Call the game on iPhone, iPad or Apple Watch \u2014 every result saved to History.",
           font(False, 46), LABEL_GREY)
 
     margin = 110; gap = 70
-    top = 470; bot = H-260
-    list_w = int((W - 2*margin - gap) * 0.52)
-    lx0, lx1 = margin, margin+list_w
-    rx0, rx1 = lx1+gap, W-margin
-    draw_ios_history(img, d, lx0, top, lx1, bot, scale=1.05)
+    top = 450; bot = H-240
+    game_w = int((W - 2*margin - gap) * 0.55)
+    game_bottom = draw_game_screen(img, d, margin, top, margin+game_w, s=1.15)
     d = ImageDraw.Draw(img)
-    draw_linescore_panel(img, d, rx0, top, rx1, bot)
+    # dial motif card fills the space under the game screen
+    m_y0 = game_bottom + gap
+    d = card(img, (margin, m_y0, margin+game_w, bot), 46)
+    ctext(d, margin+game_w//2, m_y0+44, "Final count on the wrist", font(True, 46), WHITE)
+    cr = 105
+    centres = [margin+game_w//2 - int(2.6*cr), margin+game_w//2, margin+game_w//2 + int(2.6*cr)]
+    dial_cy = m_y0 + (bot-m_y0)//2 + 40
+    for cxc, lab, val in zip(centres, ["BALLS", "STRIKES", "OUTS"], ["3", "2", "3"]):
+        draw_count_cell(img, d, cxc, dial_cy, cr, lab, val)
     d = ImageDraw.Draw(img)
-    ctext(d, W//2, H-190, "Indicator \u00B7 Timer \u00B7 Line score \u00B7 History",
+    ctext(d, margin+game_w//2, bot-90, "Counts sync from the watch automatically",
+          font(False, 32), DIM_GREY)
+    draw_history_panel(img, d, margin+game_w+gap, top, W-margin, bot, s=1.05)
+    d = ImageDraw.Draw(img)
+
+    ctext(d, W//2, H-170, "Live game \u00B7 Tournament clock \u00B7 Haptic timer alerts \u00B7 History",
           font(False, 44), DIM_GREY)
     img.save(os.path.join(OUTDIR, "ipad_2064x2752.png"))
 
+# ------------------------------------------------------------ Watch (unchanged design)
+def draw_count_cell(img, draw, cx, cy, r, label, value):
+    CHROME = (212, 220, 232); RIM = (60, 78, 108); NUM = (24, 32, 54)
+    PIN = (198, 56, 46); PIN_D = (120, 30, 25); SHADE = (214, 216, 209)
+    draw.ellipse([cx-r-int(r*0.07), cy-r-int(r*0.07), cx+r+int(r*0.07), cy+r+int(r*0.07)],
+                 outline=CHROME, width=max(2, r//22))
+    draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=IVORY, outline=RIM, width=max(2, r//30))
+    shade = Image.new("RGBA", (2*r, 2*r), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).ellipse([0, int(r*0.9), 2*r, 2*r], fill=(*SHADE, 80))
+    img.paste(shade, (cx-r, cy-r), shade)
+    for ang in (90, 0, 270, 180):
+        a = math.radians(ang)
+        draw.line([(cx+(r-int(r*0.10))*math.cos(a), cy-(r-int(r*0.10))*math.sin(a)),
+                   (cx+(r-int(r*0.21))*math.cos(a), cy-(r-int(r*0.21))*math.sin(a))],
+                  fill=RIM, width=max(2, r//40))
+    ctext(draw, cx, cy-int(r*0.62), label, font(True, int(r*0.26)), LABEL_GREY, spacing=int(r*0.02))
+    nf = font(True, int(r*1.15))
+    bb = draw.textbbox((0, 0), value, font=nf)
+    draw.text((cx - draw.textlength(value, font=nf)/2, cy-(bb[3]-bb[1])/2-bb[1]+int(r*0.12)),
+              value, font=nf, fill=NUM)
+    pr = max(2, int(r*0.08))
+    draw.ellipse([cx-pr, cy-r+int(r*0.12)-pr, cx+pr, cy-r+int(r*0.12)+pr], fill=PIN, outline=PIN_D, width=1)
+
+def make_watch():
+    W, H = 422, 514
+    img = Image.new("RGB", (W, H), NAVY_BOTTOM)
+    d = ImageDraw.Draw(img)
+    vgrad(d, 0, 0, W, H, NAVY_TOP, NAVY_BOTTOM)
+    away_x, home_x = 92, W-92
+    ctext(d, away_x, 16, "AWAY", font(True, 22), LABEL_GREY, spacing=1)
+    ctext(d, home_x, 16, "HOME", font(True, 22), LABEL_GREY, spacing=1)
+    ctext(d, away_x, 40, "3", font(True, 74), WHITE)
+    ctext(d, home_x, 40, "5", font(True, 74), WHITE)
+    rounded(d, [W//2-39, 52, W//2+39, 98], 12, fill=(34, 50, 86))
+    ctext(d, W//2, 56, "\u25B2", font(True, 18), GREEN)
+    ctext(d, W//2, 72, "4", font(True, 22), WHITE)
+    for x, lab, val in zip([92, W//2, W-92], ["BALLS", "STRIKES", "OUTS"], ["2", "1", "2"]):
+        draw_count_cell(img, d, x, 232, 58, lab, val)
+    d = ImageDraw.Draw(img)
+    rounded(d, [W//2-125, 392, W//2+125, 476], 20, fill=(22, 36, 68), outline=AMBER, width=3)
+    ccx, ccy, cr = W//2-81, 434, 22
+    d.ellipse([ccx-cr, ccy-cr, ccx+cr, ccy+cr], outline=AMBER, width=4)
+    d.line([(ccx, ccy), (ccx, ccy-12)], fill=AMBER, width=4)
+    d.line([(ccx, ccy), (ccx+9, ccy+4)], fill=AMBER, width=4)
+    ltext(d, W//2-43, 410, "47:12", font(True, 50), WHITE)
+    img.save(os.path.join(OUTDIR, "watch_422x514.png"))
+
 if __name__ == "__main__":
-    make_watch()
     make_iphone()
     make_ipad()
+    make_watch()
     print("Wrote screenshots to", OUTDIR)
-    for f in ("watch_422x514.png", "iphone_1242x2688.png", "ipad_2064x2752.png"):
+    for f in ("iphone_1242x2688.png", "ipad_2064x2752.png", "watch_422x514.png"):
         print("  -", f)
