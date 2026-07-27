@@ -130,6 +130,11 @@ struct SetupView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .listRowBackground(Color.clear)
+
+            Text("Tip: to stay on screen all game, set Settings → General → Return to Clock → Umpire → After 1 hour.")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .listRowBackground(Color.clear)
         }
         .listStyle(.carousel)
         .navigationTitle("Setup")

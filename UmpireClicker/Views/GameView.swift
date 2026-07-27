@@ -22,6 +22,8 @@ struct GameView: View {
     @State private var showGameOver = false
     @State private var showDropDead = false
     @State private var showEndConfirm = false
+    @State private var noNewAlertFired = false
+    @State private var cutoffAlertFired = false
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -53,7 +55,21 @@ struct GameView: View {
         }
         .onReceive(tick) { _ in
             timer.tick()
-            guard hasStarted, !game.isComplete, !game.pendingRunsEntry else { return }
+            guard hasStarted, !game.isComplete else { return }
+
+            // Haptic alerts: fire exactly once as each threshold is crossed.
+            // No-new = warning pattern; drop-dead = error pattern, so the two
+            // are distinguishable by feel.
+            if !noNewAlertFired && timer.isNoNewInningsTriggered {
+                noNewAlertFired = true
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            }
+            if !cutoffAlertFired && timer.isCutoffTriggered {
+                cutoffAlertFired = true
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+
+            guard !game.pendingRunsEntry else { return }
             if game.settings.autoCloseOnInactivity
                 && timer.isNoNewInningsTriggered
                 && game.secondsSinceActivity() >= TimeInterval(game.settings.inactivityTimeoutMinutes * 60) {
@@ -348,6 +364,11 @@ struct GameView: View {
         )
         timer.start()
         hasStarted = true
+        noNewAlertFired = false
+        cutoffAlertFired = false
+        // Keep the phone awake while a game is live — an umpire glances at
+        // the screen constantly and must never watch it sleep mid-count.
+        UIApplication.shared.isIdleTimerDisabled = true
     }
 
     private func teardownToIdle() {
@@ -356,6 +377,10 @@ struct GameView: View {
         showGameOver = false
         showDropDead = false
         hasStarted = false
+        noNewAlertFired = false
+        cutoffAlertFired = false
+        // Re-enable normal auto-lock now that no game is running.
+        UIApplication.shared.isIdleTimerDisabled = false
         let fresh = persistedSettings
         game = GameState(settings: fresh)
         timer = GameTimer(

@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import WatchKit
 
 struct ContentView: View {
     /// The last-used settings, persisted across games and app launches so the
@@ -26,6 +27,8 @@ struct ContentView: View {
     @State private var showGameOver = false
     @State private var showDropDeadConfirm = false
     @State private var hasStarted = false
+    @State private var noNewAlertFired = false
+    @State private var cutoffAlertFired = false
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let sync = WatchSessionManager.shared
@@ -84,7 +87,22 @@ struct ContentView: View {
         }
         .onReceive(tick) { _ in
             timer.tick()
-            guard hasStarted && !game.isComplete && !game.pendingRunsEntry else { return }
+            guard hasStarted && !game.isComplete else { return }
+
+            // Haptic alerts: fire exactly once as each threshold is crossed.
+            // No-new gets the attention pattern; drop-dead (when enforced)
+            // gets the harder failure pattern so the two are distinguishable
+            // by feel alone.
+            if !noNewAlertFired && timer.isNoNewInningsTriggered {
+                noNewAlertFired = true
+                WKInterfaceDevice.current().play(.notification)
+            }
+            if !cutoffAlertFired && timer.isCutoffTriggered {
+                cutoffAlertFired = true
+                WKInterfaceDevice.current().play(.failure)
+            }
+
+            guard !game.pendingRunsEntry else { return }
 
             // Inactivity auto-close: once the game is in the cut-off / overtime
             // phase, end it after the configured idle period with no umpire
@@ -260,6 +278,8 @@ struct ContentView: View {
         )
         timer.start()
         hasStarted = true
+        noNewAlertFired = false
+        cutoffAlertFired = false
         selection = 0
     }
 
@@ -273,6 +293,8 @@ struct ContentView: View {
         showGameOver = false
         showDropDeadConfirm = false
         hasStarted = false
+        noNewAlertFired = false
+        cutoffAlertFired = false
         let fresh = persistedSettings
         game = GameState(settings: fresh)
         timer = GameTimer(
