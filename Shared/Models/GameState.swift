@@ -48,6 +48,12 @@ public final class GameState {
     /// confirm the runs scored during that half-inning.
     public var pendingRunsEntry: Bool = false
 
+    /// Indicator-only mode: `true` when the bottom of the regulation inning
+    /// has completed. The app doesn't track the score in this mode, so it
+    /// can't know whether extra innings are needed — play halts here and the
+    /// umpire chooses "end game" or "extra innings".
+    public var pendingRegulationEnd: Bool = false
+
     // MARK: - End of game
 
     public var isComplete: Bool = false
@@ -142,10 +148,16 @@ public final class GameState {
                 // Leave outs at max for display, flag run entry.
                 pendingRunsEntry = true
             } else {
-                // Indicator-only: no runs entry — just roll straight to the
-                // next half so the clicker is ready to reuse.
+                // Indicator-only: no runs entry. At the end of the bottom of
+                // the regulation inning, halt and ask the umpire (the app
+                // doesn't know the score, so it can't decide about extras
+                // itself). Otherwise roll straight to the next half.
                 outs = 0
-                advanceHalf()
+                if half == .bottom && inning >= settings.sport.regulationInnings {
+                    pendingRegulationEnd = true
+                } else {
+                    advanceHalf()
+                }
             }
         }
     }
@@ -171,15 +183,36 @@ public final class GameState {
     /// triggers runs entry; in indicator-only mode it just rolls to the next
     /// half.
     public func forceEndOfHalf() {
-        guard !isComplete && !pendingRunsEntry else { return }
+        guard !isComplete && !pendingRunsEntry && !pendingRegulationEnd else { return }
         if settings.keepScore {
             pendingRunsEntry = true
         } else {
             balls = 0
             strikes = 0
             outs = 0
-            advanceHalf()
+            if half == .bottom && inning >= settings.sport.regulationInnings {
+                pendingRegulationEnd = true
+            } else {
+                advanceHalf()
+            }
         }
+    }
+
+    /// Indicator-only: the umpire confirmed the game is over at the end of
+    /// regulation.
+    public func confirmRegulationEnd() {
+        guard pendingRegulationEnd else { return }
+        registerActivity()
+        pendingRegulationEnd = false
+        endGame(.regulationComplete)
+    }
+
+    /// Indicator-only: the umpire says the game is tied — play extra innings.
+    public func continueToExtraInnings() {
+        guard pendingRegulationEnd else { return }
+        registerActivity()
+        pendingRegulationEnd = false
+        advanceHalf()
     }
 
     /// The umpire confirmed ending the game at the drop-dead time.
@@ -211,7 +244,7 @@ public final class GameState {
     }
 
     private var canEdit: Bool {
-        !isComplete && !pendingRunsEntry
+        !isComplete && !pendingRunsEntry && !pendingRegulationEnd
     }
 
     // MARK: - Half-inning rollover

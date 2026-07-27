@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var showRunsEntry = false
     @State private var showGameOver = false
     @State private var showDropDeadConfirm = false
+    @State private var showRegulationEnd = false
     @State private var hasStarted = false
     @State private var noNewAlertFired = false
     @State private var cutoffAlertFired = false
@@ -134,6 +135,9 @@ struct ContentView: View {
         .onChange(of: game.pendingRunsEntry) { _, isPending in
             if isPending { showRunsEntry = true }
         }
+        .onChange(of: game.pendingRegulationEnd) { _, isPending in
+            if isPending { showRegulationEnd = true }
+        }
         .onChange(of: game.isComplete) { _, ended in
             if ended {
                 timer.pause()
@@ -182,6 +186,20 @@ struct ContentView: View {
                 // next game starts clean (fresh state, Away/Home names).
                 teardownToIdle()
             }
+        }
+        .confirmationDialog(
+            "End of regulation",
+            isPresented: $showRegulationEnd,
+            titleVisibility: .visible
+        ) {
+            Button("End game", role: .destructive) {
+                game.confirmRegulationEnd()
+            }
+            Button("Extra innings") {
+                game.continueToExtraInnings()
+            }
+        } message: {
+            Text("\(game.settings.sport.regulationInnings) innings complete. End the game, or play extra innings if it's tied?")
         }
         .confirmationDialog(
             dropDeadTitle,
@@ -292,6 +310,7 @@ struct ContentView: View {
         showRunsEntry = false
         showGameOver = false
         showDropDeadConfirm = false
+        showRegulationEnd = false
         hasStarted = false
         noNewAlertFired = false
         cutoffAlertFired = false

@@ -22,8 +22,14 @@ struct GameView: View {
     @State private var showGameOver = false
     @State private var showDropDead = false
     @State private var showEndConfirm = false
+    @State private var showRegulationEnd = false
     @State private var noNewAlertFired = false
     @State private var cutoffAlertFired = false
+
+    /// Persistent haptic generator. Creating a temporary generator and firing
+    /// it immediately can drop the haptic (the generator may be deallocated
+    /// before playback), so we hold one for the life of the view.
+    @State private var haptics = UINotificationFeedbackGenerator()
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -59,14 +65,17 @@ struct GameView: View {
 
             // Haptic alerts: fire exactly once as each threshold is crossed.
             // No-new = warning pattern; drop-dead = error pattern, so the two
-            // are distinguishable by feel.
+            // are distinguishable by feel. (No effect in Simulator or on iPad
+            // — they have no Taptic Engine.)
             if !noNewAlertFired && timer.isNoNewInningsTriggered {
                 noNewAlertFired = true
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                haptics.prepare()
+                haptics.notificationOccurred(.warning)
             }
             if !cutoffAlertFired && timer.isCutoffTriggered {
                 cutoffAlertFired = true
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                haptics.prepare()
+                haptics.notificationOccurred(.error)
             }
 
             guard !game.pendingRunsEntry else { return }
@@ -85,6 +94,9 @@ struct GameView: View {
         }
         .onChange(of: game.pendingRunsEntry) { _, pending in
             if pending { showRunsEntry = true }
+        }
+        .onChange(of: game.pendingRegulationEnd) { _, pending in
+            if pending { showRegulationEnd = true }
         }
         .onChange(of: game.isComplete) { _, ended in
             guard ended else { return }
@@ -126,6 +138,12 @@ struct GameView: View {
                 showGameOver = false
                 teardownToIdle()
             }
+        }
+        .confirmationDialog("End of regulation", isPresented: $showRegulationEnd, titleVisibility: .visible) {
+            Button("End game", role: .destructive) { game.confirmRegulationEnd() }
+            Button("Extra innings") { game.continueToExtraInnings() }
+        } message: {
+            Text("\(game.settings.sport.regulationInnings) innings complete. End the game, or play extra innings if it's tied?")
         }
         .confirmationDialog("End the game?", isPresented: $showEndConfirm, titleVisibility: .visible) {
             Button("End game", role: .destructive) { game.endManually() }
@@ -178,6 +196,9 @@ struct GameView: View {
                 }
                 countRow
                 clockCard
+                if game.settings.keepScore && !game.lineScore.isEmpty {
+                    liveLineScore
+                }
                 if game.settings.keepScore {
                     Button {
                         game.forceEndOfHalf()
@@ -188,8 +209,51 @@ struct GameView: View {
                     .buttonStyle(.bordered)
                 }
             }
+            .frame(maxWidth: 700)          // keeps iPad from stretching edge-to-edge
+            .frame(maxWidth: .infinity)    // …while staying centred
             .padding()
         }
+    }
+
+    /// Live line score during the game — mirrors the watch's Line Score page.
+    private var liveLineScore: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Line score")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                Grid(horizontalSpacing: 14, verticalSpacing: 6) {
+                    GridRow {
+                        Text("").gridColumnAlignment(.leading)
+                        ForEach(game.lineScore.map(\.inning), id: \.self) {
+                            Text("\($0)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        }
+                        Text("R").font(.caption.weight(.bold)).foregroundStyle(.orange)
+                    }
+                    GridRow {
+                        Text("Away").font(.callout.weight(.semibold))
+                        ForEach(game.lineScore) { entry in
+                            Text(entry.top.map(String.init) ?? "–")
+                                .font(.callout).monospacedDigit()
+                                .foregroundStyle((entry.top ?? 0) > 0 ? .primary : .secondary)
+                        }
+                        Text("\(game.awayScore)").font(.callout.weight(.bold)).monospacedDigit()
+                    }
+                    GridRow {
+                        Text("Home").font(.callout.weight(.semibold))
+                        ForEach(game.lineScore) { entry in
+                            Text(entry.bottom.map(String.init) ?? "–")
+                                .font(.callout).monospacedDigit()
+                                .foregroundStyle((entry.bottom ?? 0) > 0 ? .primary : .secondary)
+                        }
+                        Text("\(game.homeScore)").font(.callout.weight(.bold)).monospacedDigit()
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var scoreboard: some View {
@@ -376,6 +440,7 @@ struct GameView: View {
         showRunsEntry = false
         showGameOver = false
         showDropDead = false
+        showRegulationEnd = false
         hasStarted = false
         noNewAlertFired = false
         cutoffAlertFired = false
@@ -400,6 +465,10 @@ struct BigCountCell: View {
     let increment: () -> Void
     let decrement: () -> Void
 
+    /// Per-tap click feedback, matching the watch's tap haptics. Persistent so
+    /// the haptic isn't dropped by early deallocation.
+    @State private var tapHaptic = UIImpactFeedbackGenerator(style: .medium)
+
     var body: some View {
         VStack(spacing: 6) {
             Text(label)
@@ -420,8 +489,16 @@ struct BigCountCell: View {
         .padding(.vertical, 18)
         .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
         .contentShape(RoundedRectangle(cornerRadius: 14))
-        .onTapGesture { increment() }
-        .onLongPressGesture(minimumDuration: 0.4) { decrement() }
+        .onTapGesture {
+            tapHaptic.prepare()
+            tapHaptic.impactOccurred()
+            increment()
+        }
+        .onLongPressGesture(minimumDuration: 0.4) {
+            tapHaptic.prepare()
+            tapHaptic.impactOccurred(intensity: 0.6)
+            decrement()
+        }
         .accessibilityElement()
         .accessibilityLabel("\(label): \(value)")
         .accessibilityHint("Tap to add, long-press to subtract")
