@@ -32,6 +32,7 @@
 		BB000000000000000000F025 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F025 /* GameState.swift */; };
 		BB000000000000000000F026 /* GameTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F026 /* GameTimer.swift */; };
 		BB000000000000000000F027 /* SyncMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F027 /* SyncMessages.swift */; };
+		BB000000000000000000F028 /* TimerAlerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F028 /* TimerAlerts.swift */; };
 		BB000000000000000000F031 /* Sport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F021 /* Sport.swift */; };
 		BB000000000000000000F032 /* GameSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F022 /* GameSettings.swift */; };
 		BB000000000000000000F033 /* InningRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F023 /* InningRuns.swift */; };
@@ -39,6 +40,7 @@
 		BB000000000000000000F035 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F025 /* GameState.swift */; };
 		BB000000000000000000F036 /* GameTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F026 /* GameTimer.swift */; };
 		BB000000000000000000F037 /* SyncMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F027 /* SyncMessages.swift */; };
+		BB000000000000000000F038 /* TimerAlerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F028 /* TimerAlerts.swift */; };
 		BB000000000000000000F108 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F008 /* Assets.xcassets */; };
 		BB000000000000000000F11A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F01A /* Assets.xcassets */; };
 		BB000000000000000000F1A2 /* UmpireClickerTimer Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AA000000000000000000F0A2 /* UmpireClickerTimer Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -98,6 +100,7 @@
 		AA000000000000000000F025 /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
 		AA000000000000000000F026 /* GameTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameTimer.swift; sourceTree = "<group>"; };
 		AA000000000000000000F027 /* SyncMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMessages.swift; sourceTree = "<group>"; };
+		AA000000000000000000F028 /* TimerAlerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerAlerts.swift; sourceTree = "<group>"; };
 		AA000000000000000000F0A1 /* UmpireClickerTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UmpireClickerTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000000000000000000F0A2 /* UmpireClickerTimer Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "UmpireClickerTimer Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -216,6 +219,7 @@
 				AA000000000000000000F024 /* GameRecord.swift */,
 				AA000000000000000000F025 /* GameState.swift */,
 				AA000000000000000000F026 /* GameTimer.swift */,
+				AA000000000000000000F028 /* TimerAlerts.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -353,6 +357,7 @@
 				BB000000000000000000F025 /* GameState.swift in Sources */,
 				BB000000000000000000F026 /* GameTimer.swift in Sources */,
 				BB000000000000000000F027 /* SyncMessages.swift in Sources */,
+				BB000000000000000000F028 /* TimerAlerts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,6 +381,7 @@
 				BB000000000000000000F035 /* GameState.swift in Sources */,
 				BB000000000000000000F036 /* GameTimer.swift in Sources */,
 				BB000000000000000000F037 /* SyncMessages.swift in Sources */,
+				BB000000000000000000F038 /* TimerAlerts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

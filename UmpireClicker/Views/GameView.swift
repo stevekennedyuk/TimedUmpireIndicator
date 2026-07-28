@@ -76,6 +76,8 @@ struct GameView: View {
                 cutoffAlertFired = true
                 haptics.prepare()
                 haptics.notificationOccurred(.error)
+                // Umpire is looking at the app — skip the redundant follow-up ping.
+                TimerAlerts.cancelCutoffFollowUp()
             }
 
             guard !game.pendingRunsEntry else { return }
@@ -98,9 +100,25 @@ struct GameView: View {
         .onChange(of: game.pendingRegulationEnd) { _, pending in
             if pending { showRegulationEnd = true }
         }
+        .onChange(of: timer.isPaused) { _, paused in
+            guard hasStarted && !game.isComplete else { return }
+            if paused {
+                TimerAlerts.cancelAll()
+            } else {
+                TimerAlerts.schedule(
+                    noNewIn: timer.isNoNewInningsTriggered
+                        ? nil
+                        : TimeInterval(game.settings.noNewInningsMinutes * 60) - timer.elapsed,
+                    cutoffIn: timer.isCutoffTriggered
+                        ? nil
+                        : TimeInterval(game.settings.ballGameCutoffMinutes * 60) - timer.elapsed
+                )
+            }
+        }
         .onChange(of: game.isComplete) { _, ended in
             guard ended else { return }
             timer.pause()
+            TimerAlerts.cancelAll()
             showRunsEntry = false
             if game.settings.keepScore {
                 history.add(game.buildRecord(durationSeconds: timer.elapsed))
@@ -151,7 +169,11 @@ struct GameView: View {
         }
         .confirmationDialog(dropDeadTitle, isPresented: $showDropDead, titleVisibility: .visible) {
             dropDeadButtons
-            Button("Play on") { game.registerActivity(); game.dropDeadOverridden = true }
+            Button("Play on") {
+                game.registerActivity()
+                game.dropDeadOverridden = true
+                TimerAlerts.cancelCutoffFollowUp()
+            }
         } message: {
             Text(dropDeadMessage)
         }
@@ -430,6 +452,13 @@ struct GameView: View {
         hasStarted = true
         noNewAlertFired = false
         cutoffAlertFired = false
+        // Background-safe threshold alerts — delivered by the system with a
+        // vibration even if the phone is locked or the app backgrounded.
+        TimerAlerts.requestAuthorization()
+        TimerAlerts.schedule(
+            noNewIn: TimeInterval(carried.noNewInningsMinutes * 60),
+            cutoffIn: TimeInterval(carried.ballGameCutoffMinutes * 60)
+        )
         // Keep the phone awake while a game is live — an umpire glances at
         // the screen constantly and must never watch it sleep mid-count.
         UIApplication.shared.isIdleTimerDisabled = true
@@ -437,6 +466,7 @@ struct GameView: View {
 
     private func teardownToIdle() {
         timer.reset()
+        TimerAlerts.cancelAll()
         showRunsEntry = false
         showGameOver = false
         showDropDead = false

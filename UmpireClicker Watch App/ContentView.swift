@@ -101,6 +101,9 @@ struct ContentView: View {
             if !cutoffAlertFired && timer.isCutoffTriggered {
                 cutoffAlertFired = true
                 WKInterfaceDevice.current().play(.failure)
+                // Umpire is looking at the app — the scheduled follow-up ping
+                // would be redundant noise.
+                TimerAlerts.cancelCutoffFollowUp()
             }
 
             guard !game.pendingRunsEntry else { return }
@@ -138,9 +141,27 @@ struct ContentView: View {
         .onChange(of: game.pendingRegulationEnd) { _, isPending in
             if isPending { showRegulationEnd = true }
         }
+        .onChange(of: timer.isPaused) { _, paused in
+            guard hasStarted && !game.isComplete else { return }
+            if paused {
+                // Wall-clock notifications would fire at the wrong moment
+                // while the game clock is stopped.
+                TimerAlerts.cancelAll()
+            } else {
+                TimerAlerts.schedule(
+                    noNewIn: timer.isNoNewInningsTriggered
+                        ? nil
+                        : TimeInterval(game.settings.noNewInningsMinutes * 60) - timer.elapsed,
+                    cutoffIn: timer.isCutoffTriggered
+                        ? nil
+                        : TimeInterval(game.settings.ballGameCutoffMinutes * 60) - timer.elapsed
+                )
+            }
+        }
         .onChange(of: game.isComplete) { _, ended in
             if ended {
                 timer.pause()
+                TimerAlerts.cancelAll()
                 showRunsEntry = false
                 if game.settings.keepScore {
                     let record = game.buildRecord(durationSeconds: timer.elapsed)
@@ -238,6 +259,7 @@ struct ContentView: View {
             Button("Play on") {
                 game.registerActivity()
                 game.dropDeadOverridden = true
+                TimerAlerts.cancelCutoffFollowUp()
             }
         } message: {
             Text(dropDeadMessage)
@@ -299,6 +321,13 @@ struct ContentView: View {
         noNewAlertFired = false
         cutoffAlertFired = false
         selection = 0
+        // Background-safe threshold alerts: the system delivers these with a
+        // wrist tap even when the watch has returned to the clock face.
+        TimerAlerts.requestAuthorization()
+        TimerAlerts.schedule(
+            noNewIn: TimeInterval(settings.noNewInningsMinutes * 60),
+            cutoffIn: TimeInterval(settings.ballGameCutoffMinutes * 60)
+        )
     }
 
     /// Tear the active game down to an idle state: stop the clock, release the
@@ -307,6 +336,7 @@ struct ContentView: View {
     /// kept so the next game starts from the same configuration.
     private func teardownToIdle() {
         timer.reset()
+        TimerAlerts.cancelAll()
         showRunsEntry = false
         showGameOver = false
         showDropDeadConfirm = false
