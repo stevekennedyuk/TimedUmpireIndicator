@@ -46,6 +46,15 @@ public final class GameTimer {
         case noNew    = "No New"
         case ballGame = "Ball Game"
         case overtime = "OT"
+
+        /// Compact all-caps label for tight layouts (watch timer band).
+        public var shortLabel: String {
+            switch self {
+            case .noNew:    return "NO NEW"
+            case .ballGame: return "CUTOFF"
+            case .overtime: return "OT"
+            }
+        }
     }
 
     public var phase: Phase {

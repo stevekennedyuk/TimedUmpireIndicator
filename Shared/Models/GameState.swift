@@ -77,6 +77,65 @@ public final class GameState {
         lastActivityAt = .now
     }
 
+    // MARK: - Undo
+
+    /// Snapshot of everything a single umpire action can change, so any tap
+    /// (including one that reset the count on a walk, or rolled the half /
+    /// inning on a third out) can be reverted exactly.
+    private struct UndoSnapshot {
+        var balls: Int
+        var strikes: Int
+        var outs: Int
+        var inning: Int
+        var half: Half
+        var awayScore: Int
+        var homeScore: Int
+        var lineScore: [InningRuns]
+        var halfHistory: [ScoreSnapshot]
+        var pendingRunsEntry: Bool
+        var pendingRegulationEnd: Bool
+    }
+
+    private var undoStack: [UndoSnapshot] = []
+    /// Prevents nested mutators (e.g. 3rd strike calling incrementOut) from
+    /// pushing a second snapshot for what is one umpire action.
+    private var isUndoGrouping = false
+
+    private func pushUndo() {
+        guard !isUndoGrouping else { return }
+        undoStack.append(UndoSnapshot(
+            balls: balls, strikes: strikes, outs: outs,
+            inning: inning, half: half,
+            awayScore: awayScore, homeScore: homeScore,
+            lineScore: lineScore, halfHistory: halfHistory,
+            pendingRunsEntry: pendingRunsEntry,
+            pendingRegulationEnd: pendingRegulationEnd
+        ))
+        if undoStack.count > 30 { undoStack.removeFirst() }
+    }
+
+    /// Whether there is an action to revert.
+    public var canUndo: Bool { !undoStack.isEmpty && !isComplete }
+
+    /// Revert the most recent umpire action — a mistaken ball/strike/out tap,
+    /// a runs confirmation, or a forced end-of-half — restoring the exact
+    /// prior state, even across a count reset or a half/inning advance.
+    public func undoLast() {
+        guard !isComplete, let s = undoStack.popLast() else { return }
+        registerActivity()
+        balls = s.balls
+        strikes = s.strikes
+        outs = s.outs
+        inning = s.inning
+        half = s.half
+        awayScore = s.awayScore
+        homeScore = s.homeScore
+        lineScore = s.lineScore
+        halfHistory = s.halfHistory
+        pendingRunsEntry = s.pendingRunsEntry
+        pendingRegulationEnd = s.pendingRegulationEnd
+    }
+
     /// Seconds since the last interaction.
     public func secondsSinceActivity(now: Date = .now) -> TimeInterval {
         now.timeIntervalSince(lastActivityAt)
@@ -100,6 +159,7 @@ public final class GameState {
     /// Runs from the walk are recorded by the umpire at the end of the half.
     public func incrementBall() {
         guard canEdit else { return }
+        pushUndo()
         registerActivity()
         balls += 1
         if balls >= settings.maxBalls {
@@ -110,6 +170,7 @@ public final class GameState {
 
     public func decrementBall() {
         guard canEdit else { return }
+        pushUndo()
         registerActivity()
         balls = max(0, balls - 1)
     }
@@ -118,6 +179,9 @@ public final class GameState {
     /// out is recorded.
     public func incrementStrike() {
         guard canEdit else { return }
+        pushUndo()
+        isUndoGrouping = true
+        defer { isUndoGrouping = false }
         registerActivity()
         strikes += 1
         if strikes >= settings.maxStrikes {
@@ -129,6 +193,7 @@ public final class GameState {
 
     public func decrementStrike() {
         guard canEdit else { return }
+        pushUndo()
         registerActivity()
         strikes = max(0, strikes - 1)
     }
@@ -138,6 +203,9 @@ public final class GameState {
     /// and (when keeping score) the app prompts the umpire for runs scored.
     public func incrementOut() {
         guard canEdit else { return }
+        pushUndo()
+        isUndoGrouping = true
+        defer { isUndoGrouping = false }
         registerActivity()
         outs += 1
         // A new batter is up after any out — always clear the count.
@@ -164,6 +232,7 @@ public final class GameState {
 
     public func decrementOut() {
         guard canEdit else { return }
+        pushUndo()
         registerActivity()
         if pendingRunsEntry {
             pendingRunsEntry = false
@@ -184,6 +253,9 @@ public final class GameState {
     /// half.
     public func forceEndOfHalf() {
         guard !isComplete && !pendingRunsEntry && !pendingRegulationEnd else { return }
+        pushUndo()
+        isUndoGrouping = true
+        defer { isUndoGrouping = false }
         if settings.keepScore {
             pendingRunsEntry = true
         } else {
@@ -210,6 +282,9 @@ public final class GameState {
     /// Indicator-only: the umpire says the game is tied — play extra innings.
     public func continueToExtraInnings() {
         guard pendingRegulationEnd else { return }
+        pushUndo()
+        isUndoGrouping = true
+        defer { isUndoGrouping = false }
         registerActivity()
         pendingRegulationEnd = false
         advanceHalf()
@@ -258,6 +333,9 @@ public final class GameState {
         cutoffTriggered: Bool
     ) {
         guard pendingRunsEntry else { return }
+        pushUndo()
+        isUndoGrouping = true
+        defer { isUndoGrouping = false }
         registerActivity()
 
         let normalisedRuns = max(0, runs)

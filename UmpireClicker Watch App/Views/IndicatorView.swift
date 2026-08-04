@@ -67,10 +67,94 @@ struct IndicatorView: View {
                 )
             }
 
-            timerStrip
+            timerBand
+            controlsRow
         }
         .padding(.horizontal, 2)
         .navigationTitle("Umpire")
+    }
+
+    /// Large, high-contrast countdown — the tournament clock is what the
+    /// umpire needs at a glance, so it gets the biggest type on the page.
+    private var timerBand: some View {
+        HStack(spacing: 6) {
+            Image(systemName: timerIcon)
+                .font(.system(size: 13, weight: .bold))
+            if timer.isPaused {
+                Text("PAUSED")
+                    .font(.system(size: 11, weight: .heavy))
+            } else {
+                Text(timer.phase.shortLabel)
+                    .font(.system(size: 11, weight: .heavy))
+            }
+            Spacer(minLength: 2)
+            Text(timer.activeCountdownText)
+                .font(.system(size: 24, weight: .heavy, design: .monospaced))
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+        }
+        .foregroundStyle(timer.isPaused ? .yellow : timerColor)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity)
+        .background(
+            (timer.isPaused ? Color.yellow : bandBackground).opacity(0.22),
+            in: RoundedRectangle(cornerRadius: 8)
+        )
+    }
+
+    private var bandBackground: Color {
+        switch timer.phase {
+        case .noNew:    return .gray
+        case .ballGame: return .orange
+        case .overtime: return .red
+        }
+    }
+
+    /// Undo / pause / end-half controls under the clock.
+    private var controlsRow: some View {
+        HStack {
+            Button {
+                game.undoLast()
+                haptic(.directionDown)
+            } label: {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(game.canUndo ? .orange : .gray)
+            .disabled(!game.canUndo)
+            .accessibilityLabel("Undo last action")
+
+            Spacer()
+
+            Button {
+                if timer.isPaused { timer.resume() } else { timer.pause() }
+                haptic(.click)
+            } label: {
+                Image(systemName: timer.isPaused ? "play.fill" : "pause.fill")
+                    .font(.system(size: 13))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(timer.isPaused ? .green : .yellow)
+            .disabled(timer.startedAt == nil)
+            .accessibilityLabel(timer.isPaused ? "Resume game clock" : "Pause game clock")
+
+            Spacer()
+
+            Button {
+                game.forceEndOfHalf()
+                haptic(.start)
+            } label: {
+                Image(systemName: "forward.end")
+                    .font(.system(size: 13))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.blue)
+            .accessibilityLabel("End half-inning")
+        }
+        .padding(.horizontal, 6)
     }
 
     private var inningOnlyRow: some View {
@@ -122,55 +206,6 @@ struct IndicatorView: View {
         .frame(maxWidth: .infinity, alignment: align == .leading ? .leading : .trailing)
     }
 
-    private var timerStrip: some View {
-        HStack(spacing: 4) {
-            Image(systemName: timerIcon)
-                .font(.caption2)
-                .foregroundStyle(timerColor)
-            if timer.isPaused {
-                Text("PAUSED")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.yellow)
-                Text(timer.activeCountdownText)
-                    .font(.system(size: 11, design: .monospaced))
-                    .monospacedDigit()
-                    .foregroundStyle(.yellow)
-            } else {
-                Text("\(timer.phase.rawValue):")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(timerColor)
-                Text(timer.activeCountdownText)
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .monospacedDigit()
-                    .foregroundStyle(timerColor)
-            }
-            Spacer()
-            Button {
-                if timer.isPaused { timer.resume() } else { timer.pause() }
-                haptic(.click)
-            } label: {
-                Image(systemName: timer.isPaused ? "play.fill" : "pause.fill")
-                    .font(.system(size: 11))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(timer.isPaused ? .green : .yellow)
-            .disabled(timer.startedAt == nil)
-            .accessibilityLabel(timer.isPaused ? "Resume game clock" : "Pause game clock")
-
-            Button {
-                game.forceEndOfHalf()
-                haptic(.start)
-            } label: {
-                Image(systemName: "forward.end")
-                    .font(.system(size: 11))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.blue)
-            .accessibilityLabel("End half-inning")
-        }
-        .frame(maxWidth: .infinity)
-    }
-
     private var timerIcon: String {
         switch timer.phase {
         case .noNew:    return "timer"
@@ -203,21 +238,21 @@ struct CountCell: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(label)
-                .font(.caption2.bold())
+                .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(color)
             Text("\(value)")
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .font(.system(size: 24, weight: .heavy, design: .rounded))
                 .monospacedDigit()
             HStack(spacing: 3) {
                 ForEach(0..<pips, id: \.self) { i in
                     Circle()
                         .fill(i < value ? color : color.opacity(0.25))
-                        .frame(width: 5, height: 5)
+                        .frame(width: 4, height: 4)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
         .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: 8))
         .contentShape(RoundedRectangle(cornerRadius: 8))
         .onTapGesture(perform: onIncrement)

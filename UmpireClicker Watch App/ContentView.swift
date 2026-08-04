@@ -30,6 +30,7 @@ struct ContentView: View {
     @State private var hasStarted = false
     @State private var noNewAlertFired = false
     @State private var cutoffAlertFired = false
+    @State private var thresholdFlash: ThresholdFlashKind?
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let sync = WatchSessionManager.shared
@@ -69,6 +70,13 @@ struct ContentView: View {
             .tag(3)
         }
         .tabViewStyle(.page)
+        .overlay {
+            if let kind = thresholdFlash {
+                ThresholdFlashView(kind: kind) {
+                    thresholdFlash = nil
+                }
+            }
+        }
         .onAppear {
             // Seed the first game from the last-used settings so the Setup
             // screen and any quick-start reflect prior choices (including the
@@ -90,17 +98,18 @@ struct ContentView: View {
             timer.tick()
             guard hasStarted && !game.isComplete else { return }
 
-            // Haptic alerts: fire exactly once as each threshold is crossed.
-            // No-new gets the attention pattern; drop-dead (when enforced)
-            // gets the harder failure pattern so the two are distinguishable
-            // by feel alone.
+            // Threshold alerts: an unmissable repeated haptic burst plus a
+            // full-screen colour flash. No-new = triple notification tap on
+            // amber; drop-dead = quadruple failure buzz on red.
             if !noNewAlertFired && timer.isNoNewInningsTriggered {
                 noNewAlertFired = true
-                WKInterfaceDevice.current().play(.notification)
+                thresholdFlash = .noNew
+                playHapticBurst(.notification, times: 3)
             }
             if !cutoffAlertFired && timer.isCutoffTriggered {
                 cutoffAlertFired = true
-                WKInterfaceDevice.current().play(.failure)
+                thresholdFlash = .cutoff
+                playHapticBurst(.failure, times: 4)
                 // Umpire is looking at the app — the scheduled follow-up ping
                 // would be redundant noise.
                 TimerAlerts.cancelCutoffFollowUp()
@@ -136,10 +145,19 @@ struct ContentView: View {
             }
         }
         .onChange(of: game.pendingRunsEntry) { _, isPending in
-            if isPending { showRunsEntry = true }
+            if isPending {
+                showRunsEntry = true
+            } else {
+                // Cleared without confirmation (e.g. undo) — close the sheet.
+                showRunsEntry = false
+            }
         }
         .onChange(of: game.pendingRegulationEnd) { _, isPending in
-            if isPending { showRegulationEnd = true }
+            if isPending {
+                showRegulationEnd = true
+            } else {
+                showRegulationEnd = false
+            }
         }
         .onChange(of: timer.isPaused) { _, paused in
             guard hasStarted && !game.isComplete else { return }
@@ -302,6 +320,16 @@ struct ContentView: View {
 
     // MARK: - Actions
 
+    /// Play a haptic several times in quick succession — a single tap is easy
+    /// to miss on the field, a burst is not.
+    private func playHapticBurst(_ kind: WKHapticType, times: Int) {
+        for i in 0..<times {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.45) {
+                WKInterfaceDevice.current().play(kind)
+            }
+        }
+    }
+
     private func startGame(settings: GameSettings) {
         // Persist the rules so they carry forward to the next game and survive
         // relaunch — but team names are per-game, so reset them to Away/Home
@@ -344,6 +372,7 @@ struct ContentView: View {
         hasStarted = false
         noNewAlertFired = false
         cutoffAlertFired = false
+        thresholdFlash = nil
         let fresh = persistedSettings
         game = GameState(settings: fresh)
         timer = GameTimer(
@@ -355,6 +384,54 @@ struct ContentView: View {
 
     private func endGameManually() {
         game.endManually()
+    }
+}
+
+// MARK: - Threshold flash
+
+/// Which tournament-timer threshold just fired.
+enum ThresholdFlashKind {
+    case noNew
+    case cutoff
+}
+
+/// Full-screen pulsing colour flash shown the moment a timer threshold is
+/// crossed — impossible to miss even in bright sunlight. Tap to dismiss, or
+/// it clears itself after a few seconds.
+struct ThresholdFlashView: View {
+    let kind: ThresholdFlashKind
+    let dismiss: () -> Void
+    @State private var pulse = false
+
+    var body: some View {
+        ZStack {
+            (kind == .cutoff ? Color.red : Color.orange)
+                .opacity(pulse ? 0.95 : 0.55)
+                .ignoresSafeArea()
+            VStack(spacing: 4) {
+                Image(systemName: kind == .cutoff ? "stop.circle.fill" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 32, weight: .black))
+                Text(kind == .cutoff ? "TIME!" : "NO NEW")
+                    .font(.system(size: 30, weight: .black, design: .rounded))
+                Text(kind == .cutoff ? "BALL GAME" : "INNINGS")
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                Text("Tap to dismiss")
+                    .font(.system(size: 10))
+                    .opacity(0.85)
+                    .padding(.top, 4)
+            }
+            .foregroundStyle(.white)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: dismiss)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                dismiss()
+            }
+        }
     }
 }
 

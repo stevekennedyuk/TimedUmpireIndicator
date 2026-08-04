@@ -26,6 +26,8 @@ struct GameView: View {
     @State private var noNewAlertFired = false
     @State private var cutoffAlertFired = false
 
+    @State private var thresholdFlash: ThresholdFlashKind?
+
     /// Persistent haptic generator. Creating a temporary generator and firing
     /// it immediately can drop the haptic (the generator may be deallocated
     /// before playback), so we hold one for the life of the view.
@@ -53,9 +55,24 @@ struct GameView: View {
             .navigationTitle("Umpire")
             .toolbar {
                 if hasStarted {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            game.undoLast()
+                        } label: {
+                            Label("Undo", systemImage: "arrow.uturn.backward")
+                        }
+                        .disabled(!game.canUndo)
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("End", role: .destructive) { showEndConfirm = true }
                     }
+                }
+            }
+        }
+        .overlay {
+            if let kind = thresholdFlash {
+                ThresholdFlashView(kind: kind) {
+                    thresholdFlash = nil
                 }
             }
         }
@@ -63,19 +80,19 @@ struct GameView: View {
             timer.tick()
             guard hasStarted, !game.isComplete else { return }
 
-            // Haptic alerts: fire exactly once as each threshold is crossed.
-            // No-new = warning pattern; drop-dead = error pattern, so the two
-            // are distinguishable by feel. (No effect in Simulator or on iPad
-            // — they have no Taptic Engine.)
+            // Threshold alerts: repeated haptic burst plus a full-screen
+            // colour flash — a single tap is easy to miss on the field.
+            // (Haptics need a real iPhone; Simulator and iPad have no Taptic
+            // Engine — the flash still shows there.)
             if !noNewAlertFired && timer.isNoNewInningsTriggered {
                 noNewAlertFired = true
-                haptics.prepare()
-                haptics.notificationOccurred(.warning)
+                thresholdFlash = .noNew
+                playHapticBurst(.warning, times: 3)
             }
             if !cutoffAlertFired && timer.isCutoffTriggered {
                 cutoffAlertFired = true
-                haptics.prepare()
-                haptics.notificationOccurred(.error)
+                thresholdFlash = .cutoff
+                playHapticBurst(.error, times: 4)
                 // Umpire is looking at the app — skip the redundant follow-up ping.
                 TimerAlerts.cancelCutoffFollowUp()
             }
@@ -95,10 +112,19 @@ struct GameView: View {
             }
         }
         .onChange(of: game.pendingRunsEntry) { _, pending in
-            if pending { showRunsEntry = true }
+            if pending {
+                showRunsEntry = true
+            } else {
+                // Cleared without confirmation (e.g. undo) — close the sheet.
+                showRunsEntry = false
+            }
         }
         .onChange(of: game.pendingRegulationEnd) { _, pending in
-            if pending { showRegulationEnd = true }
+            if pending {
+                showRegulationEnd = true
+            } else {
+                showRegulationEnd = false
+            }
         }
         .onChange(of: timer.isPaused) { _, paused in
             guard hasStarted && !game.isComplete else { return }
@@ -356,7 +382,7 @@ struct GameView: View {
                     .foregroundStyle(timer.isPaused ? .yellow : clockColor)
                 Spacer()
                 Text(timer.activeCountdownText)
-                    .font(.system(.title2, design: .monospaced).weight(.semibold))
+                    .font(.system(size: 40, weight: .heavy, design: .monospaced))
                     .foregroundStyle(timer.isPaused ? .yellow : clockColor)
             }
             HStack {
@@ -438,6 +464,17 @@ struct GameView: View {
 
     // MARK: - Lifecycle
 
+    /// Play the haptic several times in quick succession — a burst is far
+    /// harder to miss than a single tap.
+    private func playHapticBurst(_ kind: UINotificationFeedbackGenerator.FeedbackType, times: Int) {
+        haptics.prepare()
+        for i in 0..<times {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.45) {
+                haptics.notificationOccurred(kind)
+            }
+        }
+    }
+
     private func startGame(with settings: GameSettings) {
         var carried = settings
         carried.awayTeamName = "Away"
@@ -474,6 +511,7 @@ struct GameView: View {
         hasStarted = false
         noNewAlertFired = false
         cutoffAlertFired = false
+        thresholdFlash = nil
         // Re-enable normal auto-lock now that no game is running.
         UIApplication.shared.isIdleTimerDisabled = false
         let fresh = persistedSettings
@@ -532,6 +570,54 @@ struct BigCountCell: View {
         .accessibilityElement()
         .accessibilityLabel("\(label): \(value)")
         .accessibilityHint("Tap to add, long-press to subtract")
+    }
+}
+
+// MARK: - Threshold flash
+
+/// Which tournament-timer threshold just fired.
+enum ThresholdFlashKind {
+    case noNew
+    case cutoff
+}
+
+/// Full-screen pulsing colour flash shown the moment a timer threshold is
+/// crossed — impossible to miss even in bright sunlight. Tap to dismiss, or
+/// it clears itself after a few seconds.
+struct ThresholdFlashView: View {
+    let kind: ThresholdFlashKind
+    let dismiss: () -> Void
+    @State private var pulse = false
+
+    var body: some View {
+        ZStack {
+            (kind == .cutoff ? Color.red : Color.orange)
+                .opacity(pulse ? 0.95 : 0.55)
+                .ignoresSafeArea()
+            VStack(spacing: 10) {
+                Image(systemName: kind == .cutoff ? "stop.circle.fill" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 72, weight: .black))
+                Text(kind == .cutoff ? "TIME!" : "NO NEW")
+                    .font(.system(size: 64, weight: .black, design: .rounded))
+                Text(kind == .cutoff ? "BALL GAME" : "INNINGS")
+                    .font(.system(size: 40, weight: .heavy, design: .rounded))
+                Text("Tap to dismiss")
+                    .font(.callout)
+                    .opacity(0.85)
+                    .padding(.top, 12)
+            }
+            .foregroundStyle(.white)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: dismiss)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                dismiss()
+            }
+        }
     }
 }
 
