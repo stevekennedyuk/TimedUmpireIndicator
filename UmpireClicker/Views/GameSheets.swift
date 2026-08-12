@@ -24,6 +24,8 @@ struct GameSetupSheet: View {
     @State private var allowTies = true
     @State private var autoClose = true
     @State private var idleTimeout = 20
+    @State private var useTimers = true
+    @State private var runAhead = true
 
     var body: some View {
         NavigationStack {
@@ -37,21 +39,39 @@ struct GameSetupSheet: View {
                     Toggle("Keep score", isOn: $keepScore)
                     if keepScore {
                         Toggle("Allow ties (round-robin)", isOn: $allowTies)
+                        Toggle(isOn: $runAhead) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Run-ahead rule")
+                                Text("\(settings.runAheadEarlyMargin)+ ahead from inning \(settings.runAheadEarlyInning) · \(settings.runAheadLateMargin)+ from inning \(settings.runAheadLateInning)")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    Toggle(isOn: $useTimers) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Use timers")
+                            Text(useTimers ? "Tournament clock rules apply" : "Untimed — ends by innings, run-ahead or umpire")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                Section("Tournament timers") {
-                    Stepper("No new innings: \(noNew) min", value: $noNew, in: 10...180, step: 5)
-                    Stepper("Drop-dead: \(cutoff) min", value: $cutoff, in: 10...240, step: 5)
-                    Toggle("Enforce drop-dead", isOn: $enforceDropDead)
-                    if cutoff <= noNew {
-                        Text("Drop-dead must be greater than the No-new-innings time.")
-                            .font(.footnote).foregroundStyle(.red)
+                if useTimers {
+                    Section("Tournament timers") {
+                        Stepper("No new innings: \(noNew) min", value: $noNew, in: 10...180, step: 5)
+                        Stepper("Drop-dead: \(cutoff) min", value: $cutoff, in: 10...240, step: 5)
+                        Toggle("Enforce drop-dead", isOn: $enforceDropDead)
+                        if cutoff <= noNew {
+                            Text("Drop-dead must be greater than the No-new-innings time.")
+                                .font(.footnote).foregroundStyle(.red)
+                        }
                     }
-                }
-                Section("Auto-close") {
-                    Toggle("Auto-close when idle", isOn: $autoClose)
-                    if autoClose {
-                        Stepper("Idle limit: \(idleTimeout) min", value: $idleTimeout, in: 5...60, step: 5)
+                    Section("Auto-close") {
+                        Toggle("Auto-close when idle", isOn: $autoClose)
+                        if autoClose {
+                            Stepper("Idle limit: \(idleTimeout) min", value: $idleTimeout, in: 5...60, step: 5)
+                        }
                     }
                 }
             }
@@ -71,11 +91,13 @@ struct GameSetupSheet: View {
                         s.allowTies = allowTies
                         s.autoCloseOnInactivity = autoClose
                         s.inactivityTimeoutMinutes = idleTimeout
+                        s.useTimers = useTimers
+                        s.runAheadEnabled = runAhead
                         s.awayTeamName = "Away"
                         s.homeTeamName = "Home"
                         onStart(s)
                     }
-                    .disabled(cutoff <= noNew)
+                    .disabled(useTimers && cutoff <= noNew)
                 }
             }
             .onAppear {
@@ -87,6 +109,8 @@ struct GameSetupSheet: View {
                 allowTies = settings.allowTies
                 autoClose = settings.autoCloseOnInactivity
                 idleTimeout = settings.inactivityTimeoutMinutes
+                useTimers = settings.useTimers
+                runAhead = settings.runAheadEnabled
             }
         }
     }
@@ -205,6 +229,7 @@ struct GameOverSheet: View {
         case .noNewInningsHomeAhead: return .orange
         case .regulationComplete:    return .green
         case .inactivity:            return .purple
+        case .runAhead:              return .blue
         case .manual, .none:         return .gray
         }
     }

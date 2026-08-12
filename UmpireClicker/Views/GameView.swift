@@ -79,6 +79,8 @@ struct GameView: View {
         .onReceive(tick) { _ in
             timer.tick()
             guard hasStarted, !game.isComplete else { return }
+            // Untimed game: no thresholds, alerts, cutoff or idle-close.
+            guard game.settings.useTimers else { return }
 
             // Threshold alerts: repeated haptic burst plus a full-screen
             // colour flash — a single tap is easy to miss on the field.
@@ -127,7 +129,7 @@ struct GameView: View {
             }
         }
         .onChange(of: timer.isPaused) { _, paused in
-            guard hasStarted && !game.isComplete else { return }
+            guard hasStarted && !game.isComplete && game.settings.useTimers else { return }
             if paused {
                 TimerAlerts.cancelAll()
             } else {
@@ -375,20 +377,22 @@ struct GameView: View {
     private var clockCard: some View {
         VStack(spacing: 8) {
             HStack {
-                Image(systemName: clockIcon)
-                    .foregroundStyle(clockColor)
-                Text(timer.isPaused ? "Paused" : timer.phase.rawValue)
+                Image(systemName: game.settings.useTimers ? clockIcon : "clock")
+                    .foregroundStyle(effectiveClockColor)
+                Text(clockLabel)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(timer.isPaused ? .yellow : clockColor)
+                    .foregroundStyle(timer.isPaused ? .yellow : effectiveClockColor)
                 Spacer()
-                Text(timer.activeCountdownText)
+                Text(game.settings.useTimers ? timer.activeCountdownText : GameTimer.format(timer.elapsed))
                     .font(.system(size: 40, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(timer.isPaused ? .yellow : clockColor)
+                    .foregroundStyle(timer.isPaused ? .yellow : effectiveClockColor)
             }
             HStack {
-                Text("Elapsed \(GameTimer.format(timer.elapsed))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if game.settings.useTimers {
+                    Text("Elapsed \(GameTimer.format(timer.elapsed))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button {
                     if timer.isPaused { timer.resume() } else { timer.pause() }
@@ -403,6 +407,15 @@ struct GameView: View {
         }
         .padding()
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var clockLabel: String {
+        if timer.isPaused { return "Paused" }
+        return game.settings.useTimers ? timer.phase.rawValue : "Elapsed"
+    }
+
+    private var effectiveClockColor: Color {
+        game.settings.useTimers ? clockColor : .secondary
     }
 
     private var clockIcon: String {
@@ -491,11 +504,14 @@ struct GameView: View {
         cutoffAlertFired = false
         // Background-safe threshold alerts — delivered by the system with a
         // vibration even if the phone is locked or the app backgrounded.
-        TimerAlerts.requestAuthorization()
-        TimerAlerts.schedule(
-            noNewIn: TimeInterval(carried.noNewInningsMinutes * 60),
-            cutoffIn: TimeInterval(carried.ballGameCutoffMinutes * 60)
-        )
+        // Untimed games have no thresholds to alert on.
+        if carried.useTimers {
+            TimerAlerts.requestAuthorization()
+            TimerAlerts.schedule(
+                noNewIn: TimeInterval(carried.noNewInningsMinutes * 60),
+                cutoffIn: TimeInterval(carried.ballGameCutoffMinutes * 60)
+            )
+        }
         // Keep the phone awake while a game is live — an umpire glances at
         // the screen constantly and must never watch it sleep mid-count.
         UIApplication.shared.isIdleTimerDisabled = true

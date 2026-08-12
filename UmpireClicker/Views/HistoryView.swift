@@ -87,6 +87,7 @@ private struct HistoryRow: View {
         case .ballGameCutoff:        return .red
         case .manual:                return .gray
         case .inactivity:            return .purple
+        case .runAhead:              return .blue
         }
     }
 }

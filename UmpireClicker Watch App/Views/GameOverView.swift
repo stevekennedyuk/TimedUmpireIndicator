@@ -83,6 +83,7 @@ struct GameOverView: View {
         case .regulationComplete:    return .green
         case .manual:                return .gray
         case .inactivity:            return .purple
+        case .runAhead:              return .blue
         }
     }
 

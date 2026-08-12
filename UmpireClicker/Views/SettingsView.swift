@@ -21,6 +21,12 @@ struct SettingsView: View {
     @AppStorage("settings_maxBalls")     private var maxBalls: Int = 4
     @AppStorage("settings_maxStrikes")   private var maxStrikes: Int = 3
     @AppStorage("settings_maxOuts")      private var maxOuts: Int = 3
+    @AppStorage("settings_useTimers")    private var useTimers: Bool = true
+    @AppStorage("settings_runAhead")     private var runAhead: Bool = true
+    @AppStorage("settings_raEarlyMargin") private var raEarlyMargin: Int = 20
+    @AppStorage("settings_raEarlyInning") private var raEarlyInning: Int = 4
+    @AppStorage("settings_raLateMargin")  private var raLateMargin: Int = 15
+    @AppStorage("settings_raLateInning")  private var raLateInning: Int = 5
 
     @State private var lastSentAt: Date?
 
@@ -50,6 +56,40 @@ struct SettingsView: View {
                             }
                         }
                     }
+                    Toggle(isOn: $useTimers) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Use timers")
+                            Text(useTimers
+                                 ? "Tournament clock rules apply (no-new-innings and drop-dead)."
+                                 : "Untimed — the game ends by innings, the run-ahead rule, or the umpire.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if keepScore {
+                    Section("Run-ahead rule") {
+                        Toggle(isOn: $runAhead) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Run-ahead ends game")
+                                Text(runAhead
+                                     ? "A big enough lead ends the game at the completion of a half-inning."
+                                     : "Blowouts play on until the innings or clock end the game.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        if runAhead {
+                            Stepper("Lead of \(raEarlyMargin)+", value: $raEarlyMargin, in: 5...50)
+                            Stepper("…from inning \(raEarlyInning)", value: $raEarlyInning, in: 1...9)
+                            Stepper("Lead of \(raLateMargin)+", value: $raLateMargin, in: 5...50)
+                            Stepper("…from inning \(raLateInning)", value: $raLateInning, in: 1...9)
+                            Text("Default: 20+ at completion of the 4th inning, 15+ from the 5th on. Checked only when a full inning completes — if Home surges ahead while batting, End half-inning and enter the runs to finish it.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section("Sport") {
@@ -60,7 +100,8 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Tournament timers") {
+                if useTimers {
+                    Section("Tournament timers") {
                     Stepper("No new innings: \(noNew) min", value: $noNew, in: 10...180, step: 5)
                     Stepper("Drop-dead: \(cutoff) min", value: $cutoff, in: 10...240, step: 5)
                     Toggle(isOn: $enforceDropDead) {
@@ -78,9 +119,9 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(.red)
                     }
-                }
+                    }
 
-                Section("Auto-close") {
+                    Section("Auto-close") {
                     Toggle(isOn: $autoClose) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Auto-close when idle")
@@ -93,6 +134,7 @@ struct SettingsView: View {
                     }
                     if autoClose {
                         Stepper("Idle limit: \(idleTimeout) min", value: $idleTimeout, in: 5...60, step: 5)
+                    }
                     }
                 }
 
@@ -134,7 +176,13 @@ struct SettingsView: View {
             keepScore: keepScore,
             allowTies: allowTies,
             autoCloseOnInactivity: autoClose,
-            inactivityTimeoutMinutes: idleTimeout
+            inactivityTimeoutMinutes: idleTimeout,
+            useTimers: useTimers,
+            runAheadEnabled: runAhead,
+            runAheadEarlyMargin: raEarlyMargin,
+            runAheadEarlyInning: raEarlyInning,
+            runAheadLateMargin: raLateMargin,
+            runAheadLateInning: raLateInning
         )
     }
 

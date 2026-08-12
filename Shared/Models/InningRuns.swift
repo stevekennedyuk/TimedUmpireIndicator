@@ -60,6 +60,9 @@ public enum GameEndReason: String, Codable {
     /// Auto-ended after the configured idle period with no umpire interaction
     /// while in the cut-off / overtime phase.
     case inactivity
+    /// Run-ahead ("mercy") rule: one team led by the configured margin at the
+    /// completion of a half-inning.
+    case runAhead
 
     public var displayName: String {
         switch self {
@@ -68,6 +71,7 @@ public enum GameEndReason: String, Codable {
         case .ballGameCutoff:         return "Drop-dead"
         case .manual:                 return "Called"
         case .inactivity:             return "Auto-ended (idle)"
+        case .runAhead:               return "Run rule"
         }
     }
 }

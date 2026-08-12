@@ -361,6 +361,14 @@ public final class GameState {
         outs = 0
         pendingRunsEntry = false
 
+        // Run-ahead ("mercy") rule: from the configured inning onward, a big
+        // enough lead ends the game at the completion of a half — checked
+        // before the timer rules since the result stands on runs alone.
+        if runAheadSatisfied(afterHalf: half, inning: inning) {
+            endGame(.runAhead)
+            return
+        }
+
         // Evaluate end-of-game conditions BEFORE advancing — they're about
         // the half that just finished. Drop-dead applies unless overridden.
         if cutoffTriggered && !dropDeadOverridden && settings.enforceDropDead {
@@ -403,6 +411,25 @@ public final class GameState {
     }
 
     // MARK: - End-of-game evaluation
+
+    /// The run-ahead ("mercy") lead that applies to the given inning, or nil
+    /// when the rule is disabled or the inning is too early. Margins and
+    /// innings come from settings (default: 20 from the 4th, 15 from the 5th).
+    private func runAheadThreshold(forInning inning: Int) -> Int? {
+        guard settings.keepScore else { return nil }
+        return settings.runAheadMargin(forInning: inning)
+    }
+
+    /// True when the half-inning just completed ends the game on the
+    /// run-ahead rule. The rule only applies at the end of a FULL inning
+    /// (bottom half recorded) — a lead after the top half never ends the
+    /// game early; the home side always gets its at-bat. A walk-off surge is
+    /// handled by ending the bottom half early, which still lands here.
+    private func runAheadSatisfied(afterHalf half: Half, inning: Int) -> Bool {
+        guard half == .bottom else { return false }
+        guard let threshold = runAheadThreshold(forInning: inning) else { return false }
+        return abs(awayScore - homeScore) >= threshold
+    }
 
     /// Returns `true` if the game ended.
     @discardableResult

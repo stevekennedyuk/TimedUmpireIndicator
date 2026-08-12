@@ -51,8 +51,10 @@ struct ContentView: View {
             IndicatorView(game: game, timer: timer)
                 .tag(0)
 
-            TimerView(timer: timer, game: game)
-                .tag(1)
+            if game.settings.useTimers {
+                TimerView(timer: timer, game: game)
+                    .tag(1)
+            }
 
             if game.settings.keepScore {
                 LineScoreView(game: game)
@@ -97,6 +99,9 @@ struct ContentView: View {
         .onReceive(tick) { _ in
             timer.tick()
             guard hasStarted && !game.isComplete else { return }
+            // Untimed game: no thresholds, alerts, cutoff or idle-close — the
+            // clock only measures elapsed time for the record.
+            guard game.settings.useTimers else { return }
 
             // Threshold alerts: an unmissable repeated haptic burst plus a
             // full-screen colour flash. No-new = triple notification tap on
@@ -160,7 +165,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: timer.isPaused) { _, paused in
-            guard hasStarted && !game.isComplete else { return }
+            guard hasStarted && !game.isComplete && game.settings.useTimers else { return }
             if paused {
                 // Wall-clock notifications would fire at the wrong moment
                 // while the game clock is stopped.
@@ -351,11 +356,14 @@ struct ContentView: View {
         selection = 0
         // Background-safe threshold alerts: the system delivers these with a
         // wrist tap even when the watch has returned to the clock face.
-        TimerAlerts.requestAuthorization()
-        TimerAlerts.schedule(
-            noNewIn: TimeInterval(settings.noNewInningsMinutes * 60),
-            cutoffIn: TimeInterval(settings.ballGameCutoffMinutes * 60)
-        )
+        // Untimed games have no thresholds to alert on.
+        if settings.useTimers {
+            TimerAlerts.requestAuthorization()
+            TimerAlerts.schedule(
+                noNewIn: TimeInterval(settings.noNewInningsMinutes * 60),
+                cutoffIn: TimeInterval(settings.ballGameCutoffMinutes * 60)
+            )
+        }
     }
 
     /// Tear the active game down to an idle state: stop the clock, release the

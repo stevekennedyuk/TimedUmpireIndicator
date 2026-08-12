@@ -76,30 +76,31 @@ struct IndicatorView: View {
 
     /// Large, high-contrast countdown — the tournament clock is what the
     /// umpire needs at a glance, so it gets the biggest type on the page.
+    /// In an untimed game it shows plain elapsed time in neutral grey.
     private var timerBand: some View {
         HStack(spacing: 6) {
-            Image(systemName: timerIcon)
+            Image(systemName: game.settings.useTimers ? timerIcon : "clock")
                 .font(.system(size: 13, weight: .bold))
             if timer.isPaused {
                 Text("PAUSED")
                     .font(.system(size: 11, weight: .heavy))
             } else {
-                Text(timer.phase.shortLabel)
+                Text(game.settings.useTimers ? timer.phase.shortLabel : "TIME")
                     .font(.system(size: 11, weight: .heavy))
             }
             Spacer(minLength: 2)
-            Text(timer.activeCountdownText)
+            Text(game.settings.useTimers ? timer.activeCountdownText : GameTimer.format(timer.elapsed))
                 .font(.system(size: 24, weight: .heavy, design: .monospaced))
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
         }
-        .foregroundStyle(timer.isPaused ? .yellow : timerColor)
+        .foregroundStyle(timer.isPaused ? .yellow : (game.settings.useTimers ? timerColor : .secondary))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity)
         .background(
-            (timer.isPaused ? Color.yellow : bandBackground).opacity(0.22),
+            (timer.isPaused ? Color.yellow : (game.settings.useTimers ? bandBackground : .gray)).opacity(0.22),
             in: RoundedRectangle(cornerRadius: 8)
         )
     }

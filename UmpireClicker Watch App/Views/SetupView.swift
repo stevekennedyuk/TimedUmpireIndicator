@@ -25,6 +25,8 @@ struct SetupView: View {
     @State private var allowTies: Bool = true
     @State private var autoClose: Bool = true
     @State private var idleTimeout: Int = 20
+    @State private var useTimers: Bool = true
+    @State private var runAhead: Bool = true
     @State private var awayName: String = "Away"
     @State private var homeName: String = "Home"
     @State private var showEndConfirm = false
@@ -51,20 +53,50 @@ struct SetupView: View {
             }
             .pickerStyle(.navigationLink)
 
-            stepperRow(label: "No new (min)", value: $noNew, range: 10...180, step: 5, tint: .orange)
-            stepperRow(label: "Drop-dead (min)", value: $cutoff, range: 10...240, step: 5, tint: .red)
-
-            Toggle(isOn: $enforceDropDead) {
+            Toggle(isOn: $useTimers) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Enforce drop-dead")
+                    Text("Use timers")
                         .font(.caption2)
-                    Text(enforceDropDead ? "Prompts at cutoff" : "Advisory only")
+                    Text(useTimers ? "Tournament clock rules" : "Untimed game")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                 }
             }
             .toggleStyle(.switch)
-            .tint(.red)
+            .tint(.orange)
+
+            if useTimers {
+                stepperRow(label: "No new (min)", value: $noNew, range: 10...180, step: 5, tint: .orange)
+                stepperRow(label: "Drop-dead (min)", value: $cutoff, range: 10...240, step: 5, tint: .red)
+
+                Toggle(isOn: $enforceDropDead) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Enforce drop-dead")
+                            .font(.caption2)
+                        Text(enforceDropDead ? "Prompts at cutoff" : "Advisory only")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .toggleStyle(.switch)
+                .tint(.red)
+            }
+
+            if keepScore {
+                Toggle(isOn: $runAhead) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Run-ahead rule")
+                            .font(.caption2)
+                        Text(runAhead
+                             ? "\(settings.runAheadEarlyMargin)+ after inn \(settings.runAheadEarlyInning) \u{00B7} \(settings.runAheadLateMargin)+ after inn \(settings.runAheadLateInning)"
+                             : "Off")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .toggleStyle(.switch)
+                .tint(.blue)
+            }
 
             if keepScore {
                 Toggle(isOn: $allowTies) {
@@ -80,20 +112,22 @@ struct SetupView: View {
                 .tint(.blue)
             }
 
-            Toggle(isOn: $autoClose) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Auto-close when idle")
-                        .font(.caption2)
-                    Text(autoClose ? "After cutoff, ends if idle" : "Off")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
+            if useTimers {
+                Toggle(isOn: $autoClose) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Auto-close when idle")
+                            .font(.caption2)
+                        Text(autoClose ? "After cutoff, ends if idle" : "Off")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            }
-            .toggleStyle(.switch)
-            .tint(.purple)
+                .toggleStyle(.switch)
+                .tint(.purple)
 
-            if autoClose {
-                stepperRow(label: "Idle limit (min)", value: $idleTimeout, range: 5...60, step: 5, tint: .purple)
+                if autoClose {
+                    stepperRow(label: "Idle limit (min)", value: $idleTimeout, range: 5...60, step: 5, tint: .purple)
+                }
             }
 
             Button {
@@ -106,6 +140,8 @@ struct SetupView: View {
                 s.allowTies = allowTies
                 s.autoCloseOnInactivity = autoClose
                 s.inactivityTimeoutMinutes = idleTimeout
+                s.useTimers = useTimers
+                s.runAheadEnabled = runAhead
                 s.awayTeamName = awayName
                 s.homeTeamName = homeName
                 onStart(s)
@@ -177,6 +213,8 @@ struct SetupView: View {
         allowTies = settings.allowTies
         autoClose = settings.autoCloseOnInactivity
         idleTimeout = settings.inactivityTimeoutMinutes
+        useTimers = settings.useTimers
+        runAhead = settings.runAheadEnabled
         awayName = settings.awayTeamName
         homeName = settings.homeTeamName
     }

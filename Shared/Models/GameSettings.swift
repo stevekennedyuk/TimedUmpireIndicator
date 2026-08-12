@@ -38,6 +38,23 @@ public struct GameSettings: Codable, Equatable {
     /// Minutes of no interaction (while in cut-off / overtime) before the
     /// inactivity auto-close fires. Default 20.
     public var inactivityTimeoutMinutes: Int
+    /// If true (default), the tournament clock thresholds (no-new-innings and
+    /// drop-dead cutoff) are active, with their alerts and end-of-game rules.
+    /// If false the game is untimed: elapsed time is still shown and recorded,
+    /// but there are no thresholds, no timer alerts, and no time-based ends —
+    /// the game finishes by innings, run-ahead rule, or the umpire.
+    public var useTimers: Bool
+    /// If true, the run-ahead (mercy) rule ends the game early on a blowout.
+    public var runAheadEnabled: Bool
+    /// Early tier: margin required from `runAheadEarlyInning` onwards.
+    public var runAheadEarlyMargin: Int
+    /// Inning from which the early-tier margin applies (completed innings).
+    public var runAheadEarlyInning: Int
+    /// Late tier: (smaller) margin required from `runAheadLateInning` onwards
+    /// (default 15 from the 5th inning).
+    public var runAheadLateMargin: Int
+    /// Inning from which the late-tier margin applies (completed innings).
+    public var runAheadLateInning: Int
 
     public init(
         sport: Sport = .softball,
@@ -52,7 +69,13 @@ public struct GameSettings: Codable, Equatable {
         keepScore: Bool = true,
         allowTies: Bool = true,
         autoCloseOnInactivity: Bool = true,
-        inactivityTimeoutMinutes: Int = 20
+        inactivityTimeoutMinutes: Int = 20,
+        useTimers: Bool = true,
+        runAheadEnabled: Bool = true,
+        runAheadEarlyMargin: Int = 20,
+        runAheadEarlyInning: Int = 4,
+        runAheadLateMargin: Int = 15,
+        runAheadLateInning: Int = 5
     ) {
         self.sport = sport
         self.noNewInningsMinutes = noNewInningsMinutes
@@ -67,6 +90,22 @@ public struct GameSettings: Codable, Equatable {
         self.allowTies = allowTies
         self.autoCloseOnInactivity = autoCloseOnInactivity
         self.inactivityTimeoutMinutes = inactivityTimeoutMinutes
+        self.useTimers = useTimers
+        self.runAheadEnabled = runAheadEnabled
+        self.runAheadEarlyMargin = runAheadEarlyMargin
+        self.runAheadEarlyInning = runAheadEarlyInning
+        self.runAheadLateMargin = runAheadLateMargin
+        self.runAheadLateInning = runAheadLateInning
+    }
+
+    /// The run-ahead margin that applies for a given (completed) inning, or
+    /// nil when the rule is off / the inning is too early. Uses the smallest
+    /// margin whose inning threshold has been reached.
+    public func runAheadMargin(forInning inning: Int) -> Int? {
+        guard runAheadEnabled else { return nil }
+        if inning >= runAheadLateInning { return runAheadLateMargin }
+        if inning >= runAheadEarlyInning { return runAheadEarlyMargin }
+        return nil
     }
 
     // Backward-compatible decoding for records persisted before these fields existed.
@@ -75,6 +114,9 @@ public struct GameSettings: Codable, Equatable {
         case maxBalls, maxStrikes, maxOuts
         case awayTeamName, homeTeamName, enforceDropDead, keepScore, allowTies
         case autoCloseOnInactivity, inactivityTimeoutMinutes
+        case useTimers, runAheadEnabled
+        case runAheadEarlyMargin, runAheadEarlyInning
+        case runAheadLateMargin, runAheadLateInning
     }
 
     public init(from decoder: Decoder) throws {
@@ -92,6 +134,12 @@ public struct GameSettings: Codable, Equatable {
         allowTies             = try c.decodeIfPresent(Bool.self, forKey: .allowTies) ?? true
         autoCloseOnInactivity = try c.decodeIfPresent(Bool.self, forKey: .autoCloseOnInactivity) ?? true
         inactivityTimeoutMinutes = try c.decodeIfPresent(Int.self, forKey: .inactivityTimeoutMinutes) ?? 20
+        useTimers             = try c.decodeIfPresent(Bool.self, forKey: .useTimers) ?? true
+        runAheadEnabled       = try c.decodeIfPresent(Bool.self, forKey: .runAheadEnabled) ?? true
+        runAheadEarlyMargin   = try c.decodeIfPresent(Int.self, forKey: .runAheadEarlyMargin) ?? 20
+        runAheadEarlyInning   = try c.decodeIfPresent(Int.self, forKey: .runAheadEarlyInning) ?? 4
+        runAheadLateMargin    = try c.decodeIfPresent(Int.self, forKey: .runAheadLateMargin) ?? 15
+        runAheadLateInning    = try c.decodeIfPresent(Int.self, forKey: .runAheadLateInning) ?? 5
     }
 
     public static let `default` = GameSettings()
