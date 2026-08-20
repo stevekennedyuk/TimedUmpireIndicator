@@ -18,7 +18,7 @@ struct SetupView: View {
     let onResetTimer: () -> Void
 
     @State private var sport: Sport = .softball
-    @State private var noNew: Int = 50
+    @State private var noNew: Int = 55
     @State private var cutoff: Int = 60
     @State private var enforceDropDead: Bool = true
     @State private var keepScore: Bool = true

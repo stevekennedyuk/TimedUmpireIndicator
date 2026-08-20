@@ -58,7 +58,7 @@ public struct GameSettings: Codable, Equatable {
 
     public init(
         sport: Sport = .softball,
-        noNewInningsMinutes: Int = 50,
+        noNewInningsMinutes: Int = 55,
         ballGameCutoffMinutes: Int = 60,
         maxBalls: Int = 4,
         maxStrikes: Int = 3,

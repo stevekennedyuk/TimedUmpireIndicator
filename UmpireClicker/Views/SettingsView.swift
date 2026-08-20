@@ -11,7 +11,7 @@ struct SettingsView: View {
     @Environment(PhoneSessionManager.self) private var session
 
     @AppStorage("settings_sport")        private var sportRaw: String = Sport.softball.rawValue
-    @AppStorage("settings_noNew")        private var noNew: Int = 50
+    @AppStorage("settings_noNew")        private var noNew: Int = 55
     @AppStorage("settings_cutoff")       private var cutoff: Int = 60
     @AppStorage("settings_enforceDD")    private var enforceDropDead: Bool = true
     @AppStorage("settings_keepScore")    private var keepScore: Bool = true
@@ -163,32 +163,49 @@ struct SettingsView: View {
     }
 
     private var currentSettings: GameSettings {
-        GameSettings(
-            sport: Sport(rawValue: sportRaw) ?? .softball,
-            noNewInningsMinutes: noNew,
-            ballGameCutoffMinutes: cutoff,
-            maxBalls: maxBalls,
-            maxStrikes: maxStrikes,
-            maxOuts: maxOuts,
-            awayTeamName: "Away",
-            homeTeamName: "Home",
-            enforceDropDead: enforceDropDead,
-            keepScore: keepScore,
-            allowTies: allowTies,
-            autoCloseOnInactivity: autoClose,
-            inactivityTimeoutMinutes: idleTimeout,
-            useTimers: useTimers,
-            runAheadEnabled: runAhead,
-            runAheadEarlyMargin: raEarlyMargin,
-            runAheadEarlyInning: raEarlyInning,
-            runAheadLateMargin: raLateMargin,
-            runAheadLateInning: raLateInning
-        )
+        .fromIOSDefaults()
     }
 
     private func sync() {
         session.sendSettings(currentSettings)
         lastSentAt = .now
+    }
+}
+
+extension GameSettings {
+    /// The iPhone Settings-tab values (the `settings_*` UserDefaults keys)
+    /// assembled into a GameSettings. Single source of truth for defaults on
+    /// iOS: the Settings tab edits these keys, the game-setup sheet starts
+    /// from them (per-game changes don't write back), and Send to Watch
+    /// pushes them. Fallbacks MUST match the @AppStorage defaults above.
+    static func fromIOSDefaults(_ d: UserDefaults = .standard) -> GameSettings {
+        func int(_ key: String, _ fallback: Int) -> Int {
+            d.object(forKey: key) as? Int ?? fallback
+        }
+        func bool(_ key: String, _ fallback: Bool) -> Bool {
+            d.object(forKey: key) as? Bool ?? fallback
+        }
+        return GameSettings(
+            sport: Sport(rawValue: d.string(forKey: "settings_sport") ?? Sport.softball.rawValue) ?? .softball,
+            noNewInningsMinutes: int("settings_noNew", 55),
+            ballGameCutoffMinutes: int("settings_cutoff", 60),
+            maxBalls: int("settings_maxBalls", 4),
+            maxStrikes: int("settings_maxStrikes", 3),
+            maxOuts: int("settings_maxOuts", 3),
+            awayTeamName: "Away",
+            homeTeamName: "Home",
+            enforceDropDead: bool("settings_enforceDD", true),
+            keepScore: bool("settings_keepScore", true),
+            allowTies: bool("settings_allowTies", true),
+            autoCloseOnInactivity: bool("settings_autoClose", true),
+            inactivityTimeoutMinutes: int("settings_idleTimeout", 20),
+            useTimers: bool("settings_useTimers", true),
+            runAheadEnabled: bool("settings_runAhead", true),
+            runAheadEarlyMargin: int("settings_raEarlyMargin", 20),
+            runAheadEarlyInning: int("settings_raEarlyInning", 4),
+            runAheadLateMargin: int("settings_raLateMargin", 15),
+            runAheadLateInning: int("settings_raLateInning", 5)
+        )
     }
 }
 

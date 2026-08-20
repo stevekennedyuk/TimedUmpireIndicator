@@ -24,7 +24,7 @@ public final class GameTimer {
     /// Elapsed time. Refreshed by `tick()` (called from a 1-second Timer on the watch).
     public var elapsed: TimeInterval = 0
 
-    public init(noNewInningsMinutes: Int = 50, ballGameCutoffMinutes: Int = 60) {
+    public init(noNewInningsMinutes: Int = 55, ballGameCutoffMinutes: Int = 60) {
         self.noNewInningsMinutes = noNewInningsMinutes
         self.ballGameCutoffMinutes = ballGameCutoffMinutes
     }

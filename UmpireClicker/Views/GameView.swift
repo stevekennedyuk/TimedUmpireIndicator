@@ -12,7 +12,13 @@ import SwiftUI
 
 struct GameView: View {
     @Environment(HistoryStore.self) private var history
-    @AppStorage("ios_lastSettings") private var storedSettingsData: Data = Data()
+
+    /// Per-game overrides from the setup sheet, carried into the NEXT game's
+    /// setup while games run back-to-back. Expires after the idle timeout.
+    @AppStorage("ios_lastGameSettings") private var lastGameSettingsData: Data = Data()
+    /// Unix timestamp of the last game start/end — the reference point for
+    /// override expiry.
+    @AppStorage("ios_lastGameAt") private var lastGameAt: Double = 0
 
     @State private var game = GameState(settings: .default)
     @State private var timer = GameTimer()
@@ -34,14 +40,6 @@ struct GameView: View {
     @State private var haptics = UINotificationFeedbackGenerator()
 
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
-    private var persistedSettings: GameSettings {
-        (try? JSONDecoder().decode(GameSettings.self, from: storedSettingsData)) ?? .default
-    }
-
-    private func persist(_ s: GameSettings) {
-        if let data = try? JSONEncoder().encode(s) { storedSettingsData = data }
-    }
 
     var body: some View {
         NavigationStack {
@@ -158,7 +156,10 @@ struct GameView: View {
             }
         }
         .sheet(isPresented: $showSetup) {
-            GameSetupSheet(settings: persistedSettings) { s in
+            // Defaults: the last game's settings while games are running
+            // back-to-back (per-game overrides persist), reverting to the
+            // Settings-tab values once the idle timeout has passed.
+            GameSetupSheet(settings: setupDefaults) { s in
                 showSetup = false
                 startGame(with: s)
             } onCancel: {
@@ -477,6 +478,29 @@ struct GameView: View {
 
     // MARK: - Lifecycle
 
+    /// Defaults for the game-setup sheet. Per-game overrides carry into the
+    /// next game while games come back-to-back; once the gap since the last
+    /// game exceeds that session's idle timeout, the overrides expire and
+    /// the sheet reverts to the main Settings-tab values.
+    private var setupDefaults: GameSettings {
+        guard lastGameAt > 0,
+              !lastGameSettingsData.isEmpty,
+              let last = try? JSONDecoder().decode(GameSettings.self, from: lastGameSettingsData)
+        else { return .fromIOSDefaults() }
+        let idleSeconds = TimeInterval(max(1, last.inactivityTimeoutMinutes) * 60)
+        guard Date.now.timeIntervalSince1970 - lastGameAt <= idleSeconds else {
+            return .fromIOSDefaults()
+        }
+        return last
+    }
+
+    private func rememberLastGame(_ s: GameSettings) {
+        if let data = try? JSONEncoder().encode(s) {
+            lastGameSettingsData = data
+        }
+        lastGameAt = Date.now.timeIntervalSince1970
+    }
+
     /// Play the haptic several times in quick succession — a burst is far
     /// harder to miss than a single tap.
     private func playHapticBurst(_ kind: UINotificationFeedbackGenerator.FeedbackType, times: Int) {
@@ -492,7 +516,7 @@ struct GameView: View {
         var carried = settings
         carried.awayTeamName = "Away"
         carried.homeTeamName = "Home"
-        persist(carried)
+        rememberLastGame(carried)
         game = GameState(settings: carried)
         timer = GameTimer(
             noNewInningsMinutes: carried.noNewInningsMinutes,
@@ -530,7 +554,10 @@ struct GameView: View {
         thresholdFlash = nil
         // Re-enable normal auto-lock now that no game is running.
         UIApplication.shared.isIdleTimerDisabled = false
-        let fresh = persistedSettings
+        // Refresh the override-expiry reference point: the idle gap is
+        // measured from the END of the last game, not its start.
+        if lastGameAt > 0 { lastGameAt = Date.now.timeIntervalSince1970 }
+        let fresh = setupDefaults
         game = GameState(settings: fresh)
         timer = GameTimer(
             noNewInningsMinutes: fresh.noNewInningsMinutes,

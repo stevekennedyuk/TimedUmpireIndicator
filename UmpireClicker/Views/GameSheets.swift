@@ -17,7 +17,7 @@ struct GameSetupSheet: View {
     let onCancel: () -> Void
 
     @State private var sport: Sport = .softball
-    @State private var noNew = 50
+    @State private var noNew = 55
     @State private var cutoff = 60
     @State private var enforceDropDead = true
     @State private var keepScore = true
