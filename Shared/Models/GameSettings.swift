@@ -46,15 +46,18 @@ public struct GameSettings: Codable, Equatable {
     public var useTimers: Bool
     /// If true, the run-ahead (mercy) rule ends the game early on a blowout.
     public var runAheadEnabled: Bool
-    /// Early tier: margin required from `runAheadEarlyInning` onwards.
-    public var runAheadEarlyMargin: Int
-    /// Inning from which the early-tier margin applies (completed innings).
-    public var runAheadEarlyInning: Int
-    /// Late tier: (smaller) margin required from `runAheadLateInning` onwards
-    /// (default 15 from the 5th inning).
-    public var runAheadLateMargin: Int
-    /// Inning from which the late-tier margin applies (completed innings).
-    public var runAheadLateInning: Int
+    /// Per-inning run-ahead margins for softball, index 0 = inning 1 (7
+    /// entries). 0 disables the rule for that inning; extra innings beyond
+    /// the table reuse the last entry.
+    public var runAheadMarginsSoftball: [Int]
+    /// Per-inning run-ahead margins for baseball, index 0 = inning 1 (9
+    /// entries). Same semantics as the softball table.
+    public var runAheadMarginsBaseball: [Int]
+
+    /// Default softball mercy table: 20+ at the 4th, 15+ from the 5th.
+    public static let defaultRunAheadSoftball = [0, 0, 0, 20, 15, 15, 15]
+    /// Default WBSC baseball mercy table: 15+ from the 5th, 10+ from the 7th.
+    public static let defaultRunAheadBaseball = [0, 0, 0, 0, 15, 15, 10, 10, 10]
 
     public init(
         sport: Sport = .softball,
@@ -72,10 +75,8 @@ public struct GameSettings: Codable, Equatable {
         inactivityTimeoutMinutes: Int = 20,
         useTimers: Bool = true,
         runAheadEnabled: Bool = true,
-        runAheadEarlyMargin: Int = 20,
-        runAheadEarlyInning: Int = 4,
-        runAheadLateMargin: Int = 15,
-        runAheadLateInning: Int = 5
+        runAheadMarginsSoftball: [Int] = GameSettings.defaultRunAheadSoftball,
+        runAheadMarginsBaseball: [Int] = GameSettings.defaultRunAheadBaseball
     ) {
         self.sport = sport
         self.noNewInningsMinutes = noNewInningsMinutes
@@ -92,20 +93,51 @@ public struct GameSettings: Codable, Equatable {
         self.inactivityTimeoutMinutes = inactivityTimeoutMinutes
         self.useTimers = useTimers
         self.runAheadEnabled = runAheadEnabled
-        self.runAheadEarlyMargin = runAheadEarlyMargin
-        self.runAheadEarlyInning = runAheadEarlyInning
-        self.runAheadLateMargin = runAheadLateMargin
-        self.runAheadLateInning = runAheadLateInning
+        self.runAheadMarginsSoftball = runAheadMarginsSoftball
+        self.runAheadMarginsBaseball = runAheadMarginsBaseball
     }
 
-    /// The run-ahead margin that applies for a given (completed) inning, or
-    /// nil when the rule is off / the inning is too early. Uses the smallest
-    /// margin whose inning threshold has been reached.
+    /// The margin table for a sport.
+    public func runAheadMargins(for sport: Sport) -> [Int] {
+        sport == .baseball ? runAheadMarginsBaseball : runAheadMarginsSoftball
+    }
+
+    /// The run-ahead margin that applies for a given (just-completed) inning,
+    /// or nil when the rule is off or that inning's margin is 0. Innings
+    /// beyond the table (extras) reuse the last entry.
     public func runAheadMargin(forInning inning: Int) -> Int? {
-        guard runAheadEnabled else { return nil }
-        if inning >= runAheadLateInning { return runAheadLateMargin }
-        if inning >= runAheadEarlyInning { return runAheadEarlyMargin }
-        return nil
+        guard runAheadEnabled, inning >= 1 else { return nil }
+        let table = runAheadMargins(for: sport)
+        guard !table.isEmpty else { return nil }
+        let margin = table[min(inning, table.count) - 1]
+        return margin > 0 ? margin : nil
+    }
+
+    /// Compact human summary of a sport's mercy table, compressing runs of
+    /// equal margins — e.g. "20+@4 · 15+@5+" or "15+@5–6 · 10+@7+".
+    /// Returns "Off" when no inning has a margin.
+    public func runAheadSummary(for sport: Sport) -> String {
+        let table = runAheadMargins(for: sport)
+        var parts: [String] = []
+        var i = 0
+        while i < table.count {
+            let margin = table[i]
+            var j = i
+            while j + 1 < table.count && table[j + 1] == margin { j += 1 }
+            if margin > 0 {
+                let from = i + 1
+                let to = j + 1
+                if to == table.count {
+                    parts.append("\(margin)+@\(from)+")
+                } else if from == to {
+                    parts.append("\(margin)+@\(from)")
+                } else {
+                    parts.append("\(margin)+@\(from)–\(to)")
+                }
+            }
+            i = j + 1
+        }
+        return parts.isEmpty ? "Off" : parts.joined(separator: " · ")
     }
 
     // Backward-compatible decoding for records persisted before these fields existed.
@@ -115,6 +147,12 @@ public struct GameSettings: Codable, Equatable {
         case awayTeamName, homeTeamName, enforceDropDead, keepScore, allowTies
         case autoCloseOnInactivity, inactivityTimeoutMinutes
         case useTimers, runAheadEnabled
+        case runAheadMarginsSoftball, runAheadMarginsBaseball
+    }
+
+    /// Keys from the retired two-tier run-ahead model, decoded only to
+    /// migrate previously persisted settings into the per-inning tables.
+    private enum LegacyRunAheadKeys: String, CodingKey {
         case runAheadEarlyMargin, runAheadEarlyInning
         case runAheadLateMargin, runAheadLateInning
     }
@@ -136,10 +174,29 @@ public struct GameSettings: Codable, Equatable {
         inactivityTimeoutMinutes = try c.decodeIfPresent(Int.self, forKey: .inactivityTimeoutMinutes) ?? 20
         useTimers             = try c.decodeIfPresent(Bool.self, forKey: .useTimers) ?? true
         runAheadEnabled       = try c.decodeIfPresent(Bool.self, forKey: .runAheadEnabled) ?? true
-        runAheadEarlyMargin   = try c.decodeIfPresent(Int.self, forKey: .runAheadEarlyMargin) ?? 20
-        runAheadEarlyInning   = try c.decodeIfPresent(Int.self, forKey: .runAheadEarlyInning) ?? 4
-        runAheadLateMargin    = try c.decodeIfPresent(Int.self, forKey: .runAheadLateMargin) ?? 15
-        runAheadLateInning    = try c.decodeIfPresent(Int.self, forKey: .runAheadLateInning) ?? 5
+
+        // Per-inning tables, with migration from the retired two-tier model
+        // (early/late margin + inning) for previously persisted settings.
+        let legacy = try decoder.container(keyedBy: LegacyRunAheadKeys.self)
+        func legacyTable(count: Int) throws -> [Int]? {
+            guard let earlyMargin = try legacy.decodeIfPresent(Int.self, forKey: .runAheadEarlyMargin) else {
+                return nil
+            }
+            let earlyInning = try legacy.decodeIfPresent(Int.self, forKey: .runAheadEarlyInning) ?? 4
+            let lateMargin  = try legacy.decodeIfPresent(Int.self, forKey: .runAheadLateMargin) ?? 15
+            let lateInning  = try legacy.decodeIfPresent(Int.self, forKey: .runAheadLateInning) ?? 5
+            return (1...count).map { inning in
+                if inning >= lateInning { return lateMargin }
+                if inning >= earlyInning { return earlyMargin }
+                return 0
+            }
+        }
+        runAheadMarginsSoftball = try c.decodeIfPresent([Int].self, forKey: .runAheadMarginsSoftball)
+            ?? (try legacyTable(count: 7))
+            ?? Self.defaultRunAheadSoftball
+        runAheadMarginsBaseball = try c.decodeIfPresent([Int].self, forKey: .runAheadMarginsBaseball)
+            ?? (try legacyTable(count: 9))
+            ?? Self.defaultRunAheadBaseball
     }
 
     public static let `default` = GameSettings()

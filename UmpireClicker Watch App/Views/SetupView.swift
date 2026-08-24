@@ -88,7 +88,7 @@ struct SetupView: View {
                         Text("Run-ahead rule")
                             .font(.caption2)
                         Text(runAhead
-                             ? "\(settings.runAheadEarlyMargin)+ after inn \(settings.runAheadEarlyInning) \u{00B7} \(settings.runAheadLateMargin)+ after inn \(settings.runAheadLateInning)"
+                             ? settings.runAheadSummary(for: sport)
                              : "Off")
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)

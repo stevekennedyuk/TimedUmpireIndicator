@@ -23,10 +23,8 @@ struct SettingsView: View {
     @AppStorage("settings_maxOuts")      private var maxOuts: Int = 3
     @AppStorage("settings_useTimers")    private var useTimers: Bool = true
     @AppStorage("settings_runAhead")     private var runAhead: Bool = true
-    @AppStorage("settings_raEarlyMargin") private var raEarlyMargin: Int = 20
-    @AppStorage("settings_raEarlyInning") private var raEarlyInning: Int = 4
-    @AppStorage("settings_raLateMargin")  private var raLateMargin: Int = 15
-    @AppStorage("settings_raLateInning")  private var raLateInning: Int = 5
+    @AppStorage("settings_raSoftball")   private var raSoftballCSV: String = "0,0,0,20,15,15,15"
+    @AppStorage("settings_raBaseball")   private var raBaseballCSV: String = "0,0,0,0,15,15,10,10,10"
 
     @State private var lastSentAt: Date?
 
@@ -81,11 +79,20 @@ struct SettingsView: View {
                             }
                         }
                         if runAhead {
-                            Stepper("Lead of \(raEarlyMargin)+", value: $raEarlyMargin, in: 5...50)
-                            Stepper("…from inning \(raEarlyInning)", value: $raEarlyInning, in: 1...9)
-                            Stepper("Lead of \(raLateMargin)+", value: $raLateMargin, in: 5...50)
-                            Stepper("…from inning \(raLateInning)", value: $raLateInning, in: 1...9)
-                            Text("Default: 20+ at completion of the 4th inning, 15+ from the 5th on. Checked only when a full inning completes — if Home surges ahead while batting, End half-inning and enter the runs to finish it.")
+                            let sport = Sport(rawValue: sportRaw) ?? .softball
+                            ForEach(1...sport.regulationInnings, id: \.self) { inning in
+                                Stepper(value: marginBinding(inning: inning, sport: sport), in: 0...50, step: 5) {
+                                    HStack {
+                                        Text("Inning \(inning)")
+                                        Spacer()
+                                        let v = margins(for: sport)[inning - 1]
+                                        Text(v == 0 ? "Off" : "\(v)+")
+                                            .monospacedDigit()
+                                            .foregroundStyle(v == 0 ? .secondary : .primary)
+                                    }
+                                }
+                            }
+                            Text("Lead needed to end the game when that inning completes (0 = rule off for that inning). Extra innings use the last inning's value. Home ahead by the margin after the TOP half ends it at N½ — Home needn't bat. Table shown is for \(sport.displayName); each sport keeps its own.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -166,6 +173,36 @@ struct SettingsView: View {
         .fromIOSDefaults()
     }
 
+    private func margins(for sport: Sport) -> [Int] {
+        let fallback = sport == .baseball
+            ? GameSettings.defaultRunAheadBaseball
+            : GameSettings.defaultRunAheadSoftball
+        let csv = sport == .baseball ? raBaseballCSV : raSoftballCSV
+        return Self.parseMargins(csv, count: sport.regulationInnings, fallback: fallback)
+    }
+
+    private func marginBinding(inning: Int, sport: Sport) -> Binding<Int> {
+        Binding(
+            get: { margins(for: sport)[inning - 1] },
+            set: { newValue in
+                var table = margins(for: sport)
+                table[inning - 1] = max(0, newValue)
+                let csv = table.map(String.init).joined(separator: ",")
+                if sport == .baseball { raBaseballCSV = csv } else { raSoftballCSV = csv }
+            }
+        )
+    }
+
+    /// Parse a comma-separated margin table; falls back wholesale if the
+    /// string doesn't contain exactly `count` integers.
+    static func parseMargins(_ csv: String, count: Int, fallback: [Int]) -> [Int] {
+        let values = csv.split(separator: ",").compactMap {
+            Int($0.trimmingCharacters(in: .whitespaces))
+        }
+        guard values.count == count else { return fallback }
+        return values.map { max(0, $0) }
+    }
+
     private func sync() {
         session.sendSettings(currentSettings)
         lastSentAt = .now
@@ -185,6 +222,10 @@ extension GameSettings {
         func bool(_ key: String, _ fallback: Bool) -> Bool {
             d.object(forKey: key) as? Bool ?? fallback
         }
+        func table(_ key: String, count: Int, fallback: [Int]) -> [Int] {
+            guard let csv = d.string(forKey: key) else { return fallback }
+            return SettingsView.parseMargins(csv, count: count, fallback: fallback)
+        }
         return GameSettings(
             sport: Sport(rawValue: d.string(forKey: "settings_sport") ?? Sport.softball.rawValue) ?? .softball,
             noNewInningsMinutes: int("settings_noNew", 55),
@@ -201,10 +242,8 @@ extension GameSettings {
             inactivityTimeoutMinutes: int("settings_idleTimeout", 20),
             useTimers: bool("settings_useTimers", true),
             runAheadEnabled: bool("settings_runAhead", true),
-            runAheadEarlyMargin: int("settings_raEarlyMargin", 20),
-            runAheadEarlyInning: int("settings_raEarlyInning", 4),
-            runAheadLateMargin: int("settings_raLateMargin", 15),
-            runAheadLateInning: int("settings_raLateInning", 5)
+            runAheadMarginsSoftball: table("settings_raSoftball", count: 7, fallback: GameSettings.defaultRunAheadSoftball),
+            runAheadMarginsBaseball: table("settings_raBaseball", count: 9, fallback: GameSettings.defaultRunAheadBaseball)
         )
     }
 }

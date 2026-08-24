@@ -42,7 +42,7 @@ struct GameSetupSheet: View {
                         Toggle(isOn: $runAhead) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Run-ahead rule")
-                                Text("\(settings.runAheadEarlyMargin)+ ahead from inning \(settings.runAheadEarlyInning) · \(settings.runAheadLateMargin)+ from inning \(settings.runAheadLateInning)")
+                                Text(settings.runAheadSummary(for: sport))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }

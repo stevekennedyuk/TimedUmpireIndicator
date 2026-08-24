@@ -413,22 +413,26 @@ public final class GameState {
     // MARK: - End-of-game evaluation
 
     /// The run-ahead ("mercy") lead that applies to the given inning, or nil
-    /// when the rule is disabled or the inning is too early. Margins and
-    /// innings come from settings (default: 20 from the 4th, 15 from the 5th).
+    /// when the rule is disabled, the inning's margin is 0 (rule off for that
+    /// inning), or score isn't kept. Margins come from the per-inning table
+    /// for the game's sport.
     private func runAheadThreshold(forInning inning: Int) -> Int? {
         guard settings.keepScore else { return nil }
         return settings.runAheadMargin(forInning: inning)
     }
 
     /// True when the half-inning just completed ends the game on the
-    /// run-ahead rule. The rule only applies at the end of a FULL inning
-    /// (bottom half recorded) — a lead after the top half never ends the
-    /// game early; the home side always gets its at-bat. A walk-off surge is
-    /// handled by ending the bottom half early, which still lands here.
+    /// run-ahead rule, using that inning's configured margin. After the
+    /// BOTTOM half either team can win by the margin. After the TOP half
+    /// only the HOME side can — they lead without needing to bat (the
+    /// "4½ innings" mercy finish).
     private func runAheadSatisfied(afterHalf half: Half, inning: Int) -> Bool {
-        guard half == .bottom else { return false }
         guard let threshold = runAheadThreshold(forInning: inning) else { return false }
-        return abs(awayScore - homeScore) >= threshold
+        guard abs(awayScore - homeScore) >= threshold else { return false }
+        switch half {
+        case .bottom: return true
+        case .top:    return leader == .home
+        }
     }
 
     /// Returns `true` if the game ended.
