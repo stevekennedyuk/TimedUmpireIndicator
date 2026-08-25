@@ -81,7 +81,7 @@ struct SettingsView: View {
                         if runAhead {
                             let sport = Sport(rawValue: sportRaw) ?? .softball
                             ForEach(1...sport.regulationInnings, id: \.self) { inning in
-                                Stepper(value: marginBinding(inning: inning, sport: sport), in: 0...50, step: 5) {
+                                Stepper(value: marginBinding(inning: inning, sport: sport), in: 0...50, step: 1) {
                                     HStack {
                                         Text("Inning \(inning)")
                                         Spacer()
