@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Swipe-to-dismiss is off: the pages swipe sideways, and a right swipe on
+         the first page must never close the app mid-game. -->
+    <style name="Theme.UmpireWear" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:windowSwipeToDismiss">false</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

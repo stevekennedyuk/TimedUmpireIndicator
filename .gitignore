@@ -58,3 +58,25 @@ AppStore/screenshots/*.png
 # Misc
 *.swp
 *~
+
+# Android
+Android/.gradle/
+Android/**/build/
+Android/local.properties
+Android/.idea/
+Android/**/*.iml
+Android/captures/
+Android/.kotlin/
+*.keystore
+*.jks
+keystore.properties
+
+# Android build output and signed APKs/bundles (share these via GitHub Releases, not git)
+Android/app/release/
+Android/wear/release/
+*.apk
+*.aab
+*.ap_
+
+# Moved under iOS/
+iOS/AppStore/screenshots/*.png
