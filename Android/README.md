@@ -60,6 +60,31 @@ The real screens are drawn to PNG files by unit tests:
     ./gradlew :app:testDebugUnitTest    # → app/build/screens  (phone, small phone, tablet)
     ./gradlew :wear:testDebugUnitTest   # → wear/build/screens (round 192, round 225, square 180)
 
+## Releases (APKs for direct install)
+
+Signed phone and watch APKs are published on the GitHub Releases page:
+<https://github.com/stevekennedyuk/TimedUmpireIndicator/releases>, tagged
+`android-v<version>`.
+
+Release builds are signed with the key in `Android/umpire-release.jks`, whose
+passwords are in `Android/keystore.properties`. **Neither file is in git — keep
+both backed up.** Android only installs an update over an existing copy if it's
+signed with the same key, and the phone and watch apps only sync with each
+other when they're signed with the same key.
+
+To make a new release:
+
+    ./gradlew :app:assembleRelease :wear:assembleRelease
+    # → app/build/outputs/apk/release/app-release.apk
+    #   wear/build/outputs/apk/release/wear-release.apk
+    gh release create android-v1.7 \
+        app/build/outputs/apk/release/app-release.apk#Umpire-1.7-phone.apk \
+        wear/build/outputs/apk/release/wear-release.apk#Umpire-1.7-wear.apk \
+        --title "Umpire 1.7 for Android" --notes "What changed…"
+
+Then raise `appVersionCode` in `build.gradle.kts` (see below). Without
+`keystore.properties`, release builds are unsigned and won't install.
+
 ## Versions
 
 `build.gradle.kts` in this folder holds `appVersionName` (follows iOS, now
