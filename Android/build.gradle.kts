@@ -13,4 +13,4 @@ plugins {
 // The version name follows iOS. Build-number policy as on iOS: the code always
 // holds the NEXT unused number; raise it straight after an upload.
 extra["appVersionName"] = "1.6"
-extra["appVersionCode"] = 1
+extra["appVersionCode"] = 2
