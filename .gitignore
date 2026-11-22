@@ -23,6 +23,15 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 
+# Xcode — archives and Distribute App export folders (keep these out of git;
+# Xcode's Organizer has the archives, and they're named "<Scheme> <date> <time>")
+*.xcarchive
+*.xcarchive/
+*\ 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\ [0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+ExportOptions.plist
+DistributionSummary.plist
+Packaging.log
+
 # Xcode — other
 *.hmap
 *.ipa
